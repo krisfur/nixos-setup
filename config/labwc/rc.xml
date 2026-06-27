@@ -99,9 +99,14 @@
     <keybind key="W-S-9"><action name="SendToDesktop" to="9" /></keybind>
     <keybind key="W-S-0"><action name="SendToDesktop" to="10" /></keybind>
 
-    <!-- Workspace cycling (replaces Sway 3-finger swipe binds) -->
-    <keybind key="W-Tab"><action name="GoToDesktop" to="right" wrap="yes" /></keybind>
-    <keybind key="W-S-Tab"><action name="GoToDesktop" to="left" wrap="yes" /></keybind>
+    <!--
+      Workspace cycling. Also what the 3-finger swipe fires (via wtype). Uses
+      Ctrl+Alt rather than Super on purpose: a fast swipe sends these keys while
+      fingers are still moving, and Super+motion would trip the Super+drag
+      move-window mousebind, dragging the window onto the new desktop.
+    -->
+    <keybind key="C-A-Right"><action name="GoToDesktop" to="right" wrap="yes" /></keybind>
+    <keybind key="C-A-Left"><action name="GoToDesktop" to="left" wrap="yes" /></keybind>
 
     <!-- Screenshots (window mode dropped: no sway IPC under labwc) -->
     <keybind key="Print"><action name="Execute" command="~/.config/labwc/labwc-screenshot.sh region" /></keybind>

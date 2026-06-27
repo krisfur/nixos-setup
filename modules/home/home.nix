@@ -139,11 +139,12 @@ in
     "nvim/init.lua".source = "${inputs.neovim-config}/init.lua";
 
     # 3-finger touchpad swipe -> next/prev desktop. labwc can't bind gestures,
-    # so libinput-gestures (autostarted) fires the Super+Tab desktop-cycle binds
-    # via wtype. Swipe left = next, swipe right = prev (matches the old Sway setup).
+    # so libinput-gestures (autostarted) fires the Ctrl+Alt+Left/Right desktop-
+    # cycle binds via wtype (Ctrl+Alt, not Super, so a fast swipe can't trip the
+    # Super+drag move). Swipe left = next, swipe right = prev (as in the old Sway setup).
     "libinput-gestures.conf".text = ''
-      gesture swipe left  3 ${pkgs.wtype}/bin/wtype -M logo -k Tab -m logo
-      gesture swipe right 3 ${pkgs.wtype}/bin/wtype -M logo -M shift -k Tab -m shift -m logo
+      gesture swipe left  3 ${pkgs.wtype}/bin/wtype -M ctrl -M alt -k Right -m alt -m ctrl
+      gesture swipe right 3 ${pkgs.wtype}/bin/wtype -M ctrl -M alt -k Left -m alt -m ctrl
     '';
   };
 
