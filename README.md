@@ -4,6 +4,8 @@ Declarative NixOS config: labwc (stacking Wayland WM), Nord theme, Waybar,
 greetd login, and a Nix-managed dev toolchain (latest GCC for C++26, latest
 kernel). Neovim config is pinned as a flake input, shared across machines.
 
+![screenshot](./screenshot.png)
+
 ## Install (from the minimal NixOS installer)
 
 Boot the minimal ISO. You start as user `nixos` (no password); prefix commands
