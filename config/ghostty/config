@@ -5,5 +5,13 @@
 font-family = JetBrainsMono Nerd Font
 font-size = 11
 
+# nordfox: the higher-contrast, more saturated take on Nord (matches the
+# neovim colourscheme), readable rather than the washed-out pure Nord.
+theme = nordfox
+
+# Slight translucency for an ephemeral feel. labwc has no compositor blur,
+# so this is plain alpha over whatever is behind the window.
+background-opacity = 0.93
+
 window-width = 110
 window-height = 32
