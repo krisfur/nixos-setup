@@ -25,21 +25,29 @@ with `sudo` or run `sudo -i` for a root shell.
 
    ```bash
    sudo -i
+   lsblk                       # identify the target disk first
+
+   # Wipe any existing partition table + filesystem signatures
+   wipefs -a /dev/sdX
+   sgdisk --zap-all /dev/sdX
+
+   # GPT: 512MiB EFI system partition + rest for root
    parted /dev/sdX -- mklabel gpt
    parted /dev/sdX -- mkpart ESP fat32 1MiB 512MiB
    parted /dev/sdX -- set 1 esp on
    parted /dev/sdX -- mkpart primary 512MiB 100%
 
-   mkfs.fat -F32 -n BOOT /dev/sdX1   # FAT uppercases the label -> BOOT
+   # NOTE: NVMe names partitions p1/p2 (e.g. /dev/nvme0n1p1); SATA uses 1/2.
+   mkfs.fat -F 32 -n boot /dev/sdX1
    mkfs.ext4 -L nixos /dev/sdX2
    ```
 
-3. **Mount:**
+3. **Mount** (`umask=077` keeps the ESP root-only, per the NixOS manual):
 
    ```bash
    mount /dev/disk/by-label/nixos /mnt
    mkdir -p /mnt/boot
-   mount /dev/disk/by-label/BOOT /mnt/boot
+   mount -o umask=077 /dev/disk/by-label/boot /mnt/boot
    ```
 
 4. **Clone this repo** (git is on the ISO):
