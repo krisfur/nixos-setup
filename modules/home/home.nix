@@ -1,4 +1,4 @@
-{ pkgs, config, ... }:
+{ pkgs, config, inputs, ... }:
 
 let
   configDir = ../../config;
@@ -116,8 +116,8 @@ in
     };
     "labwc/autostart".source = autostart;
 
-    # neovim (git submodule -> github.com/krisfur/neovim-config)
-    "nvim/init.lua".source = ../../nvim/init.lua;
+    # neovim (flake input -> github.com/krisfur/neovim-config)
+    "nvim/init.lua".source = "${inputs.neovim-config}/init.lua";
   };
 
   # Environment for the labwc session (labwc reads ~/.config/labwc/environment).

@@ -2,7 +2,7 @@
 
 Declarative NixOS config: labwc (stacking Wayland WM), Nord theme, Waybar,
 greetd login, and a Nix-managed dev toolchain (latest GCC for C++26, latest
-kernel). Neovim config is a git submodule shared across machines.
+kernel). Neovim config is pinned as a flake input, shared across machines.
 
 ## Install (from the minimal NixOS installer)
 
@@ -53,7 +53,7 @@ with `sudo` or run `sudo -i` for a root shell.
 4. **Clone this repo** (git is on the ISO):
 
    ```bash
-   git clone --recurse-submodules https://github.com/krisfur/nixos-setup /mnt/etc/nixos-setup
+   git clone https://github.com/krisfur/nixos-setup /mnt/etc/nixos-setup
    cd /mnt/etc/nixos-setup
    ```
 
@@ -68,10 +68,10 @@ with `sudo` or run `sudo -i` for a root shell.
    git add hosts/nixos/hardware-configuration.nix
    ```
 
-6. **Install.** `?submodules=1` is required so the neovim submodule is included:
+6. **Install:**
 
    ```bash
-   nixos-install --flake '/mnt/etc/nixos-setup?submodules=1#nixos'
+   nixos-install --flake '/mnt/etc/nixos-setup#nixos'
    reboot
    ```
 
@@ -84,11 +84,22 @@ passwd
 
 ## Apply changes later
 
+The repo lives in root-owned `/etc`, so git runs need `sudo`:
+
 ```bash
-cd /etc/nixos-setup
-git pull --recurse-submodules
-sudo nixos-rebuild switch --flake '.?submodules=1#nixos'
+sudo git -C /etc/nixos-setup pull
+sudo nixos-rebuild switch --flake '/etc/nixos-setup#nixos'
 ```
+
+To pull a newer neovim config (the pinned flake input):
+
+```bash
+sudo nix flake update neovim-config --flake /etc/nixos-setup
+sudo nixos-rebuild switch --flake '/etc/nixos-setup#nixos'
+```
+
+(Prefer keeping the repo in your home, e.g. `~/nixos-setup`, to avoid the
+`sudo git` dance - only the `nixos-rebuild`/`nixos-install` step needs root.)
 
 ## C++26
 
@@ -109,7 +120,7 @@ anywhere with no per-project setup.
 - Dev tooling: moved from `mise` to Nix (`modules/system/dev.nix`).
   GCC 16.1 system-wide for `-std=c++26` (P2996 reflection).
   `fex` is dropped; Nix handles binaries/flakes natively.
-- Neovim: `nvim/` submodule (`github.com/krisfur/neovim-config`).
+- Neovim: pinned flake input `neovim-config` (`github.com/krisfur/neovim-config`).
 
 ## Layout
 
@@ -119,5 +130,5 @@ hosts/nixos/                   host config + (placeholder) hardware-configuratio
 modules/system/                core, desktop, dev, packages
 modules/home/home.nix          home-manager: theming, git, vendored dotfiles
 config/                        vendored dotfiles (labwc, waybar, fuzzel, fastfetch, ...)
-nvim/                          neovim submodule
+                               (neovim config comes from the neovim-config flake input)
 ```
