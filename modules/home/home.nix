@@ -12,6 +12,7 @@ let
     ${pkgs.waybar}/bin/waybar &
     ${pkgs.swaynotificationcenter}/bin/swaync &
     ${pkgs.networkmanagerapplet}/bin/nm-applet --indicator &
+    ${pkgs.libinput-gestures}/bin/libinput-gestures &
     ${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1 &
     ${pkgs.swayidle}/bin/swayidle -w \
       timeout 300 '${lockCmd}' \
@@ -90,7 +91,11 @@ in
   };
 
   # --- Shell + git ---
-  programs.fish.enable = true;
+  programs.fish = {
+    enable = true;
+    # Greet each new interactive shell (terminal window/tab) with fastfetch.
+    interactiveShellInit = "fastfetch";
+  };
   programs.git = {
     enable = true;
     userName = "Krzysztof Furman";
@@ -127,6 +132,14 @@ in
 
     # neovim (flake input -> github.com/krisfur/neovim-config)
     "nvim/init.lua".source = "${inputs.neovim-config}/init.lua";
+
+    # 3-finger touchpad swipe -> next/prev desktop. labwc can't bind gestures,
+    # so libinput-gestures (autostarted) fires the Super+Tab desktop-cycle binds
+    # via wtype. Swipe left = next, swipe right = prev (matches the old Sway setup).
+    "libinput-gestures.conf".text = ''
+      gesture swipe left  3 ${pkgs.wtype}/bin/wtype -M logo -k Tab -m logo
+      gesture swipe right 3 ${pkgs.wtype}/bin/wtype -M logo -M shift -k Tab -m shift -m logo
+    '';
   };
 
   # Environment for the labwc session (labwc reads ~/.config/labwc/environment).
