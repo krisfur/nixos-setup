@@ -9,10 +9,13 @@
     "modules-right": ["tray", "bluetooth", "group/hardware", "pulseaudio", "custom/power-profile", "battery", "custom/notification", "custom/power"],
 
     "ext/workspaces": {
-        "format": "{name}",
+        "format": "{icon}",
         "on-click": "activate",
         "sort-by-id": true,
-        "active-only": false
+        "format-icons": {
+            "active": "󰮯",
+            "default": "󰊠"
+        }
     },
 
     "clock": {

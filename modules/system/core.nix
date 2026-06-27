@@ -17,6 +17,12 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
+  # Quiet the boot console so kernel/boot text doesn't bleed onto tty1 and
+  # garble the greetd greeter (the "double lines" artifact).
+  boot.kernelParams = [ "quiet" ];
+  boot.consoleLogLevel = 0;
+  boot.initrd.verbose = false;
+
   # Networking.
   networking.networkmanager.enable = true;
   networking.firewall.enable = true;

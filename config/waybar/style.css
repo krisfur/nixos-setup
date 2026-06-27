@@ -43,6 +43,19 @@ window#waybar {
     color: #eceff4;
 }
 
+/* Cosmetic: show only the first 3 workspaces, plus the active one if it's
+   beyond 3 (mimics sway/hyprland persistent-workspaces). ext/workspaces has
+   no such option and GTK CSS has no display:none, so collapse buttons 4+
+   unless active. */
+#workspaces button:nth-child(n+4):not(.active) {
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    font-size: 0;
+    opacity: 0;
+}
+
 #custom-power:hover {
     background: #bf616a;
     color: #eceff4;

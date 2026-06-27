@@ -80,6 +80,15 @@ in
   };
   dconf.settings."org/gnome/desktop/interface".color-scheme = "prefer-dark";
 
+  # Modern cursor (the default is the chunky X11 fallback). Also exported to
+  # the labwc environment below so the compositor itself uses it.
+  home.pointerCursor = {
+    gtk.enable = true;
+    name = "Bibata-Modern-Ice";
+    package = pkgs.bibata-cursors;
+    size = 24;
+  };
+
   # --- Shell + git ---
   programs.fish.enable = true;
   programs.git = {
@@ -123,5 +132,7 @@ in
   # Environment for the labwc session (labwc reads ~/.config/labwc/environment).
   home.file.".config/labwc/environment".text = ''
     XKB_DEFAULT_LAYOUT=gb
+    XCURSOR_THEME=Bibata-Modern-Ice
+    XCURSOR_SIZE=24
   '';
 }

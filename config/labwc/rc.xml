@@ -51,11 +51,12 @@
     <keybind key="W-S-c"><action name="Reconfigure" /></keybind>
 
     <!-- Maximize/restore (not fullscreen - keeps the bar visible) -->
-    <keybind key="W-Up"><action name="ToggleMaximize" /></keybind>
+    <keybind key="W-S-f"><action name="ToggleMaximize" /></keybind>
 
     <!-- Edge snapping (closest non-tiling analog to Sway focus/move arrows) -->
     <keybind key="W-Left"><action name="SnapToEdge" direction="left" /></keybind>
     <keybind key="W-Right"><action name="SnapToEdge" direction="right" /></keybind>
+    <keybind key="W-Up"><action name="SnapToEdge" direction="up" /></keybind>
     <keybind key="W-Down"><action name="SnapToEdge" direction="down" /></keybind>
 
     <keybind key="W-S-Left"><action name="MoveToEdge" direction="left" /></keybind>
