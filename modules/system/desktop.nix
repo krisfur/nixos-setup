@@ -70,6 +70,11 @@ in
     };
   };
 
+  # swaylock authenticates via a PAM service named "swaylock". Without this it
+  # can never verify your password (PAM denies by default), so the lock screen
+  # is unbreakable even with the correct password. This enables that PAM stack.
+  security.pam.services.swaylock = { };
+
   # polkit + keyring + dconf for gsettings-driven theming.
   security.polkit.enable = true;
   services.gnome.gnome-keyring.enable = true;
