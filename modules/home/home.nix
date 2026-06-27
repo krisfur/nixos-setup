@@ -70,6 +70,9 @@ in
       name = "Nordic";
       package = pkgs.nordic;
     };
+    # Keep applying Nordic to GTK4 too (the old setup themed gtk-4.0). Use
+    # `null` here instead if you'd rather let libadwaita apps render natively.
+    gtk4.theme = config.gtk.theme;
     iconTheme = {
       name = "Papirus-Dark";
       package = pkgs.papirus-icon-theme;
