@@ -1,0 +1,105 @@
+window#waybar {
+    background: transparent;
+    font-family: "JetBrainsMono Nerd Font", sans-serif;
+    font-size: 13px;
+}
+
+/* Grouping modules for a consistent "Pill" look */
+#taskbar,
+#clock,
+#pulseaudio,
+#network,
+#bluetooth,
+#hardware,
+#battery,
+#custom-notification,
+#custom-power-profile,
+#custom-power,
+#tray {
+    background: #3b4252;
+    color: #eceff4;
+    padding: 2px 12px;
+    margin: 5px 3px;
+    border-radius: 8px;
+    border: 1px solid #4c566a;
+}
+
+#taskbar button {
+    padding: 0 6px;
+    margin: 0;
+    color: #d8dee9;
+    background: transparent;
+    border: none;
+}
+
+#taskbar button.active {
+    background: #88c0d0;
+    color: #2e3440;
+    border-radius: 6px;
+}
+
+#taskbar button:hover {
+    background: #4c566a;
+    color: #eceff4;
+}
+
+#custom-power:hover {
+    background: #bf616a;
+    color: #eceff4;
+}
+
+#custom-power {
+    padding: 2px 14px 2px 10px;
+}
+
+#custom-power-profile {
+    min-width: 24px;
+    padding: 2px 10px;
+}
+
+#custom-power-profile.power-saver {
+    color: #a3be8c;
+    border-color: #8fbc8f;
+}
+
+#custom-power-profile.performance {
+    color: #bf616a;
+    border-color: #d08770;
+}
+
+/* Status Colors */
+#pulseaudio.muted {
+    background-color: #bf616a;
+}
+
+#network.disconnected {
+    background-color: #d08770;
+}
+
+#custom-notification.dnd-none,
+#custom-notification.dnd-notification,
+#custom-notification.dnd-inhibited-none,
+#custom-notification.dnd-inhibited-notification {
+    color: #bf616a;
+}
+
+#battery.warning {
+    background-color: #ebcb8b; /* Yellow */
+    color: #2e3440;
+}
+
+#battery.critical:not(.charging) {
+    background-color: #bf616a;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+@keyframes blink {
+    to {
+        background-color: #eceff4;
+        color: #2e3440;
+    }
+}

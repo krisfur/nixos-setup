@@ -1,0 +1,122 @@
+<?xml version="1.0"?>
+<!--
+  labwc configuration. Stacking (non-tiling) replacement for the old Sway setup.
+  Keybinds mirror the Sway config where they translate; tiling-only binds
+  (scratchpad, resize-by-pixel, directional focus) are mapped to the closest
+  labwc equivalents (edge snapping, window cycling) or dropped.
+
+  Mod key = Super (W-). Terminal = ghostty, menu = fuzzel, files = thunar,
+  browser = helium.
+-->
+<labwc_config>
+  <core>
+    <gap>4</gap>
+  </core>
+
+  <theme>
+    <cornerRadius>8</cornerRadius>
+    <dropShadows>yes</dropShadows>
+    <titlebar>
+      <layout>icon:iconify,max,close</layout>
+    </titlebar>
+  </theme>
+
+  <desktops>
+    <number>10</number>
+    <popupTime>0</popupTime>
+  </desktops>
+
+  <focus>
+    <followMouse>no</followMouse>
+    <raiseOnFocus>no</raiseOnFocus>
+  </focus>
+
+  <keyboard>
+    <!-- Launchers -->
+    <keybind key="W-Return"><action name="Execute" command="ghostty" /></keybind>
+    <keybind key="W-space"><action name="Execute" command="fuzzel" /></keybind>
+    <keybind key="W-e"><action name="Execute" command="thunar" /></keybind>
+    <keybind key="W-b"><action name="Execute" command="helium" /></keybind>
+    <keybind key="W-l"><action name="Execute" command="swaylock -f -i ~/.config/labwc/wallpaper.png --effect-blur 7x5 --config ~/.config/swaylock/config" /></keybind>
+
+    <!-- Window management -->
+    <keybind key="W-w"><action name="Close" /></keybind>
+    <keybind key="W-f"><action name="ToggleFullscreen" /></keybind>
+    <keybind key="W-t"><action name="ToggleAlwaysOnTop" /></keybind>
+    <keybind key="A-Tab"><action name="NextWindow" /></keybind>
+    <keybind key="A-S-Tab"><action name="PreviousWindow" /></keybind>
+
+    <!-- Session -->
+    <keybind key="W-m"><action name="Exit" /></keybind>
+    <keybind key="W-S-c"><action name="Reconfigure" /></keybind>
+
+    <!-- Edge snapping (closest non-tiling analog to Sway focus/move arrows) -->
+    <keybind key="W-Left"><action name="SnapToEdge" direction="left" /></keybind>
+    <keybind key="W-Right"><action name="SnapToEdge" direction="right" /></keybind>
+    <keybind key="W-Up"><action name="SnapToEdge" direction="up" /></keybind>
+    <keybind key="W-Down"><action name="SnapToEdge" direction="down" /></keybind>
+
+    <keybind key="W-S-Left"><action name="MoveToEdge" direction="left" /></keybind>
+    <keybind key="W-S-Right"><action name="MoveToEdge" direction="right" /></keybind>
+    <keybind key="W-S-Up"><action name="MoveToEdge" direction="up" /></keybind>
+    <keybind key="W-S-Down"><action name="MoveToEdge" direction="down" /></keybind>
+
+    <!-- Workspaces (labwc desktops) -->
+    <keybind key="W-1"><action name="GoToDesktop" to="1" /></keybind>
+    <keybind key="W-2"><action name="GoToDesktop" to="2" /></keybind>
+    <keybind key="W-3"><action name="GoToDesktop" to="3" /></keybind>
+    <keybind key="W-4"><action name="GoToDesktop" to="4" /></keybind>
+    <keybind key="W-5"><action name="GoToDesktop" to="5" /></keybind>
+    <keybind key="W-6"><action name="GoToDesktop" to="6" /></keybind>
+    <keybind key="W-7"><action name="GoToDesktop" to="7" /></keybind>
+    <keybind key="W-8"><action name="GoToDesktop" to="8" /></keybind>
+    <keybind key="W-9"><action name="GoToDesktop" to="9" /></keybind>
+    <keybind key="W-0"><action name="GoToDesktop" to="10" /></keybind>
+
+    <keybind key="W-S-1"><action name="SendToDesktop" to="1" /></keybind>
+    <keybind key="W-S-2"><action name="SendToDesktop" to="2" /></keybind>
+    <keybind key="W-S-3"><action name="SendToDesktop" to="3" /></keybind>
+    <keybind key="W-S-4"><action name="SendToDesktop" to="4" /></keybind>
+    <keybind key="W-S-5"><action name="SendToDesktop" to="5" /></keybind>
+    <keybind key="W-S-6"><action name="SendToDesktop" to="6" /></keybind>
+    <keybind key="W-S-7"><action name="SendToDesktop" to="7" /></keybind>
+    <keybind key="W-S-8"><action name="SendToDesktop" to="8" /></keybind>
+    <keybind key="W-S-9"><action name="SendToDesktop" to="9" /></keybind>
+    <keybind key="W-S-0"><action name="SendToDesktop" to="10" /></keybind>
+
+    <!-- Workspace cycling (replaces Sway 3-finger swipe binds) -->
+    <keybind key="W-Tab"><action name="GoToDesktop" to="right" wrap="yes" /></keybind>
+    <keybind key="W-S-Tab"><action name="GoToDesktop" to="left" wrap="yes" /></keybind>
+
+    <!-- Screenshots (window mode dropped: no sway IPC under labwc) -->
+    <keybind key="Print"><action name="Execute" command="~/.config/labwc/labwc-screenshot.sh region" /></keybind>
+    <keybind key="W-S-Print"><action name="Execute" command="~/.config/labwc/labwc-screenshot.sh output" /></keybind>
+
+    <!-- Media / brightness keys -->
+    <keybind key="XF86AudioRaiseVolume"><action name="Execute" command="wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+" /></keybind>
+    <keybind key="XF86AudioLowerVolume"><action name="Execute" command="wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-" /></keybind>
+    <keybind key="XF86AudioMute"><action name="Execute" command="wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle" /></keybind>
+    <keybind key="XF86AudioMicMute"><action name="Execute" command="wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle" /></keybind>
+    <keybind key="XF86MonBrightnessUp"><action name="Execute" command="brightnessctl -e4 -n2 set 5%+" /></keybind>
+    <keybind key="XF86MonBrightnessDown"><action name="Execute" command="brightnessctl -e4 -n2 set 5%-" /></keybind>
+    <keybind key="XF86AudioNext"><action name="Execute" command="playerctl next" /></keybind>
+    <keybind key="XF86AudioPause"><action name="Execute" command="playerctl play-pause" /></keybind>
+    <keybind key="XF86AudioPlay"><action name="Execute" command="playerctl play-pause" /></keybind>
+    <keybind key="XF86AudioPrev"><action name="Execute" command="playerctl previous" /></keybind>
+  </keyboard>
+
+  <mouse>
+    <context name="Frame">
+      <mousebind button="W-Left" action="Press"><action name="Focus" /><action name="Raise" /></mousebind>
+      <mousebind button="W-Left" action="Drag"><action name="Move" /></mousebind>
+      <mousebind button="W-Right" action="Press"><action name="Focus" /><action name="Raise" /></mousebind>
+      <mousebind button="W-Right" action="Drag"><action name="Resize" /></mousebind>
+    </context>
+  </mouse>
+
+  <!-- Float media/utility windows centered, like the Sway for_window rules -->
+  <windowRules>
+    <windowRule identifier="imv" type="positive"><action name="ToggleAlwaysOnTop" /></windowRule>
+    <windowRule identifier="mpv" type="positive"><action name="ToggleAlwaysOnTop" /></windowRule>
+  </windowRules>
+</labwc_config>
