@@ -49,7 +49,18 @@
 
     # Wayland clipboard for neovim (the nvim config expects wl-clipboard).
     wl-clipboard
+
+    # neovim's Mason shells out to these to fetch/extract tools. NixOS ships
+    # tar/gzip/curl by default but NOT unzip, which is why stylua/prettier/etc.
+    # failed to install. (clangd is handled by Nix clang-tools above; the nvim
+    # config already prefers a non-Mason clangd.)
+    unzip
   ];
+
+  # Let Mason's *dynamically linked* prebuilt binaries run. NixOS has no
+  # /lib64/ld-linux-*.so loader, so foreign binaries fail without this shim.
+  # Keeps the shared neovim config (Mason) working unchanged on NixOS.
+  programs.nix-ld.enable = true;
 
   # Docker (the old sway setup enabled the daemon + added the user to docker).
   virtualisation.docker.enable = true;
