@@ -31,7 +31,4 @@
     libmtp
     android-tools
   ];
-
-  # Android device access over USB.
-  services.udev.packages = [ pkgs.android-udev-rules ];
 }
