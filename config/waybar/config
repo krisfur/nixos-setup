@@ -4,14 +4,14 @@
     "height": 36,
     "spacing": 4,
 
-    "modules-left": ["wlr/workspaces"],
+    "modules-left": ["ext/workspaces"],
     "modules-center": ["clock"],
     "modules-right": ["tray", "bluetooth", "group/hardware", "pulseaudio", "custom/power-profile", "battery", "custom/notification", "custom/power"],
 
-    "wlr/workspaces": {
+    "ext/workspaces": {
         "format": "{name}",
         "on-click": "activate",
-        "sort-by-number": true,
+        "sort-by-id": true,
         "active-only": false
     },
 
