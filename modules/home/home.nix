@@ -113,6 +113,9 @@ in
     "waybar/config".source = "${configDir}/waybar/config";
     "waybar/style.css".source = "${configDir}/waybar/style.css";
 
+    # ghostty terminal (default window size bumped so btop fits)
+    "ghostty/config".source = "${configDir}/ghostty/config";
+
     # fuzzel launcher
     "fuzzel/fuzzel.ini".source = "${configDir}/fuzzel/fuzzel.ini";
 

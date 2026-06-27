@@ -1,0 +1,9 @@
+# Ghostty configuration.
+# window-width/height are in terminal cells (columns/rows), not pixels.
+# The default landed at 79x28, one column short of btop's 80x28 minimum.
+
+font-family = JetBrainsMono Nerd Font
+font-size = 11
+
+window-width = 110
+window-height = 32

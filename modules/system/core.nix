@@ -16,6 +16,10 @@
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+  # Trim the boot menu: keep only the last few generations as entries instead
+  # of one per rebuild. (Older generations still exist for `nixos-rebuild
+  # --rollback` / GC; this only limits what's listed at boot.)
+  boot.loader.systemd-boot.configurationLimit = 5;
 
   # Quiet the boot console so kernel/boot text doesn't bleed onto tty1 and
   # garble the greetd greeter (the "double lines" artifact).
