@@ -10,17 +10,14 @@ Boot the minimal ISO. You start as user `nixos` (no password); prefix commands
 with `sudo` or run `sudo -i` for a root shell.
 
 1. **Get online.** Wired DHCP connects automatically - test with `ping nixos.org`.
-   For wifi the minimal ISO uses `wpa_supplicant` (no NetworkManager):
+   For wifi, the installer ships NetworkManager (this is the way the NixOS
+   manual recommends):
 
    ```bash
-   sudo systemctl start wpa_supplicant
-   wpa_cli
-   > add_network            # note the returned id (e.g. 0)
-   > set_network 0 ssid "YOUR_SSID"
-   > set_network 0 psk "YOUR_PASSWORD"
-   > enable_network 0
-   > quit
+   nmcli device wifi connect "YOUR_SSID" password "YOUR_PASSWORD"
    ```
+
+   Then verify with `ping -c2 nixos.org`.
 
 2. **Partition + format** the target disk (UEFI/GPT). Replace `/dev/sdX` with
    your disk (`lsblk` to find it). The LABELs `boot`/`nixos` are what the
