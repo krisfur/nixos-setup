@@ -78,6 +78,10 @@ in
   # polkit + keyring + dconf for gsettings-driven theming.
   security.polkit.enable = true;
   services.gnome.gnome-keyring.enable = true;
+  # Auto-unlock the GNOME keyring with the login password (greetd is the login
+  # PAM service). Chromium/Helium store secrets here; without this the keyring
+  # stays locked and prompts on its own.
+  security.pam.services.greetd.enableGnomeKeyring = true;
   programs.dconf.enable = true;
 
   # Thunar file manager + thumbnails + trash/mounting.
