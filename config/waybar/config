@@ -108,7 +108,7 @@
         "tooltip": true,
         "format": "⏻",
         "tooltip-format": "Power menu",
-        "on-click": "bash -lc 'choice=$(printf \" Shutdown\\n Reboot\\n Cancel\" | fuzzel --dmenu --hide-prompt --lines 3); case \"$choice\" in \" Shutdown\") systemctl poweroff ;; \" Reboot\") systemctl reboot ;; *) : ;; esac'"
+        "on-click": "bash -lc 'choice=$(printf \"󰐥 Shutdown\\n󰜉 Reboot\\n󰅖 Cancel\" | fuzzel --dmenu --hide-prompt --lines 3); case \"$choice\" in \"󰐥 Shutdown\") systemctl poweroff ;; \"󰜉 Reboot\") systemctl reboot ;; *) : ;; esac'"
     },
 
     "tray": {
