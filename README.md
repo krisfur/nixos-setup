@@ -101,6 +101,52 @@ sudo nixos-rebuild switch --flake '/etc/nixos-setup#nixos'
 (Prefer keeping the repo in your home, e.g. `~/nixos-setup`, to avoid the
 `sudo git` dance - only the `nixos-rebuild`/`nixos-install` step needs root.)
 
+## Update everything (like `dnf upgrade` / `pacman -Syu`)
+
+Package versions are pinned by `flake.lock`. Updating = bumping the lock to the
+latest `nixos-unstable` (and other inputs), then rebuilding:
+
+```bash
+sudo nix flake update --flake /etc/nixos-setup     # bump flake.lock
+sudo nixos-rebuild switch --flake '/etc/nixos-setup#nixos'
+```
+
+Commit the changed `flake.lock` afterward so the new versions are pinned/shared.
+To reclaim disk from old generations:
+
+```bash
+sudo nix-collect-garbage --delete-older-than 14d
+```
+
+To roll back a bad update, pick a previous generation in the boot menu, or:
+
+```bash
+sudo nixos-rebuild switch --rollback
+```
+
+## Add a package
+
+System packages live in `modules/system/packages.nix` (desktop apps) or
+`modules/system/dev.nix` (dev tooling). Add the attribute name to the relevant
+list and rebuild. E.g. to add the Helix editor, in `packages.nix`:
+
+```nix
+  environment.systemPackages = with pkgs; [
+    ghostty
+    helix          # <- added
+    ...
+  ];
+```
+
+then:
+
+```bash
+sudo nixos-rebuild switch --flake '/etc/nixos-setup#nixos'
+```
+
+Find the exact attribute name with `nix search nixpkgs helix` or
+<https://search.nixos.org/packages>. Most apps are just the lowercase name.
+
 ## C++26
 
 GCC 16.1 is system-wide, so `c++ -std=c++26` (incl. P2996 reflection) works
