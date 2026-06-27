@@ -22,7 +22,7 @@
     # Languages / runtimes.
     go
     nodejs_22
-    nodePackages.pnpm
+    pnpm
     rustc
     cargo
     clippy
