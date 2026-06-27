@@ -13,6 +13,18 @@
     <gap>4</gap>
   </core>
 
+  <!--
+    Disable three-finger drag: with it on, a 3-finger touch becomes a button
+    press + drag, so our 3-finger swipe-to-switch-desktop gesture drags the
+    focused window along to the new desktop. We want the swipe to be a pure
+    gesture (handled by libinput-gestures), not a window drag.
+  -->
+  <libinput>
+    <device category="touchpad">
+      <threeFingerDrag>no</threeFingerDrag>
+    </device>
+  </libinput>
+
   <theme>
     <cornerRadius>8</cornerRadius>
     <dropShadows>yes</dropShadows>

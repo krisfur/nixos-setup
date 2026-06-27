@@ -98,9 +98,11 @@ in
   };
   programs.git = {
     enable = true;
-    userName = "Krzysztof Furman";
-    userEmail = "krisfur@proton.me";
-    extraConfig.init.defaultBranch = "main";
+    settings = {
+      user.name = "Krzysztof Furman";
+      user.email = "krisfur@proton.me";
+      init.defaultBranch = "main";
+    };
   };
 
   # --- Vendored config files ---
