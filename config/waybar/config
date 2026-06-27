@@ -4,30 +4,21 @@
     "height": 36,
     "spacing": 4,
 
-    "modules-left": ["wlr/taskbar"],
+    "modules-left": ["wlr/workspaces"],
     "modules-center": ["clock"],
-    "modules-right": ["tray", "network", "bluetooth", "group/hardware", "pulseaudio", "custom/power-profile", "battery", "custom/notification", "custom/power"],
+    "modules-right": ["tray", "bluetooth", "group/hardware", "pulseaudio", "custom/power-profile", "battery", "custom/notification", "custom/power"],
 
-    "wlr/taskbar": {
-        "format": "{icon} {title}",
-        "icon-size": 16,
-        "tooltip-format": "{title}",
+    "wlr/workspaces": {
+        "format": "{name}",
         "on-click": "activate",
-        "on-click-middle": "close",
-        "max-length": 40
+        "sort-by-number": true,
+        "active-only": false
     },
 
     "clock": {
         "format": "󱑂 {:%H:%M}",
         "format-alt": "󰃭 {:%Y-%m-%d}",
         "tooltip-format": "<tt><small>{calendar}</small></tt>"
-    },
-
-    "network": {
-        "format-wifi": "󰖩 {essid}",
-        "format-ethernet": "󰈀 {ifname}",
-        "format-disconnected": "󰖪 Disconnected",
-        "on-click": "nm-connection-editor"
     },
 
     "bluetooth": {

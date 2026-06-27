@@ -5,7 +5,7 @@ window#waybar {
 }
 
 /* Grouping modules for a consistent "Pill" look */
-#taskbar,
+#workspaces,
 #clock,
 #pulseaudio,
 #network,
@@ -24,7 +24,7 @@ window#waybar {
     border: 1px solid #4c566a;
 }
 
-#taskbar button {
+#workspaces button {
     padding: 0 6px;
     margin: 0;
     color: #d8dee9;
@@ -32,13 +32,13 @@ window#waybar {
     border: none;
 }
 
-#taskbar button.active {
+#workspaces button.active {
     background: #88c0d0;
     color: #2e3440;
     border-radius: 6px;
 }
 
-#taskbar button:hover {
+#workspaces button:hover {
     background: #4c566a;
     color: #eceff4;
 }

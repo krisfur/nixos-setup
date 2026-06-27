@@ -114,9 +114,13 @@
     </context>
   </mouse>
 
-  <!-- Float media/utility windows centered, like the Sway for_window rules -->
+  <!--
+    No server-side titlebars. GTK apps (ghostty, thunar) then draw their own
+    dark CSD headerbars with working buttons; apps that only support SSD become
+    borderless (move with Super+drag, close with Super+W), matching the old
+    Sway pixel-border feel.
+  -->
   <windowRules>
-    <windowRule identifier="imv" type="positive"><action name="ToggleAlwaysOnTop" /></windowRule>
-    <windowRule identifier="mpv" type="positive"><action name="ToggleAlwaysOnTop" /></windowRule>
+    <windowRule identifier="*" serverDecoration="no" />
   </windowRules>
 </labwc_config>
