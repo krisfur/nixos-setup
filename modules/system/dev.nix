@@ -47,19 +47,35 @@
     jq
     claude-code
 
+    # Neovim language servers + formatters. The nvim config no longer uses
+    # Mason: every server in its `servers` table and every conform formatter
+    # must be on PATH (it shells out by command name). clangd comes from
+    # clang-tools, rust-analyzer/zls are above; the rest are here.
+    gopls                          # go
+    lua-language-server            # lua  (lua_ls)
+    ols                            # odin
+    ty                             # python types (ty server)
+    ruff                           # python lint/format (ruff server + ruff_format)
+    tinymist                       # typst
+    vscode-langservers-extracted   # eslint (vscode-eslint-language-server)
+    typescript-language-server     # ts/js (ts_ls)
+    typescript                     # tsserver backing ts_ls
+    stylua                         # lua format
+    prettier                       # js/ts/json format
+    # (swiftformat / sourcekit-lsp are macOS-only and not enabled on Linux.)
+
     # Wayland clipboard for neovim (the nvim config expects wl-clipboard).
     wl-clipboard
 
-    # neovim's Mason shells out to these to fetch/extract tools. NixOS ships
-    # tar/gzip/curl by default but NOT unzip, which is why stylua/prettier/etc.
-    # failed to install. (clangd is handled by Nix clang-tools above; the nvim
-    # config already prefers a non-Mason clangd.)
+    # Some neovim plugins build native bits on first run: telescope-fzf-native
+    # (make), treesitter parsers (cc), markdown-preview (npm). gnumake/gcc16/
+    # nodejs above cover those; unzip is kept as a generally-useful extractor.
     unzip
   ];
 
-  # Let Mason's *dynamically linked* prebuilt binaries run. NixOS has no
-  # /lib64/ld-linux-*.so loader, so foreign binaries fail without this shim.
-  # Keeps the shared neovim config (Mason) working unchanged on NixOS.
+  # Escape hatch for running dynamically-linked foreign binaries (no
+  # /lib64/ld-linux-*.so on NixOS). Not needed by the Nix-provided LSPs, but
+  # handy for ad-hoc prebuilt tools (e.g. pip wheels shipping binaries).
   programs.nix-ld.enable = true;
 
   # Docker (the old sway setup enabled the daemon + added the user to docker).
