@@ -102,6 +102,13 @@ in
       user.name = "Krzysztof Furman";
       user.email = "krisfur@proton.me";
       init.defaultBranch = "main";
+      # Use the gh CLI's token for HTTPS GitHub git operations (push/pull),
+      # the declarative equivalent of `gh auth setup-git`. Scoped to GitHub so
+      # gh isn't invoked for other remotes. Requires a successful `gh auth login`.
+      credential = {
+        "https://github.com".helper = "!${pkgs.gh}/bin/gh auth git-credential";
+        "https://gist.github.com".helper = "!${pkgs.gh}/bin/gh auth git-credential";
+      };
     };
   };
 
