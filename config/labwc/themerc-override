@@ -1,0 +1,11 @@
+# labwc theme overrides (merged over the active theme's themerc).
+#
+# Disable the snapping overlays labwc draws when a window is snapped to an edge
+# or region. The edge "border" overlay is an outlined rectangle that showed up
+# as a stray line at the top of half-screen (Meta+Up/Down) windows and sometimes
+# failed to clear. We snap via keybind and don't need the drag preview, so turn
+# all four off.
+snapping.overlay.edge.bg.enabled: no
+snapping.overlay.edge.border.enabled: no
+snapping.overlay.region.bg.enabled: no
+snapping.overlay.region.border.enabled: no

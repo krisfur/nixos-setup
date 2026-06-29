@@ -134,6 +134,7 @@ in
     # labwc compositor
     "labwc/rc.xml".source = "${configDir}/labwc/rc.xml";
     "labwc/menu.xml".source = "${configDir}/labwc/menu.xml";
+    "labwc/themerc-override".source = "${configDir}/labwc/themerc-override";
     "labwc/wallpaper.png".source = "${configDir}/wallpaper/wallpaper.png";
     "labwc/labwc-screenshot.sh" = {
       source = "${configDir}/labwc/labwc-screenshot.sh";
