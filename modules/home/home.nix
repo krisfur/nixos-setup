@@ -8,6 +8,18 @@ let
   # labwc reads ~/.config/labwc/autostart on startup. We generate it here so
   # the helper binaries resolve to their Nix store paths.
   autostart = pkgs.writeShellScript "labwc-autostart" ''
+    # pam_gnome_keyring unlocks a keyring daemon at login, but D-Bus sometimes
+    # activates a second, *locked* secrets daemon before the unlocked one claims
+    # the bus name - the intermittent keyring prompt after a rebuild+reboot.
+    # Re-run --start here, inside the session, to adopt the already-unlocked
+    # daemon and make it own org.freedesktop.secrets on the session bus before
+    # any app (Helium) asks, pre-empting the locked instance. Run synchronously
+    # so the name is claimed before the apps below launch.
+    eval "$(${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --start --components=secrets,ssh,pkcs11)"
+    export SSH_AUTH_SOCK
+    ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd \
+      SSH_AUTH_SOCK GNOME_KEYRING_CONTROL DISPLAY WAYLAND_DISPLAY 2>/dev/null || true
+
     ${pkgs.swaybg}/bin/swaybg -i ${wallpaper} -m fill &
     ${pkgs.waybar}/bin/waybar &
     ${pkgs.swaynotificationcenter}/bin/swaync &
