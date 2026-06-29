@@ -37,3 +37,9 @@ background-opacity = 0.93
 
 window-width = 110
 window-height = 32
+
+# No client-side decorations. ghostty defaults to `auto`, which (with labwc
+# forcing CSD via serverDecoration="no") makes libadwaita draw a thin CSD edge
+# that only shows up in the *tiled* state - the stray dashed line at the top
+# when snapping with Meta+Up/Down. `none` removes that surface entirely.
+window-decoration = none
