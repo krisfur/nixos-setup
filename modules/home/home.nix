@@ -12,7 +12,6 @@ let
     ${pkgs.waybar}/bin/waybar &
     ${pkgs.swaynotificationcenter}/bin/swaync &
     ${pkgs.networkmanagerapplet}/bin/nm-applet --indicator &
-    ${pkgs.libinput-gestures}/bin/libinput-gestures &
     ${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1 &
     ${pkgs.swayidle}/bin/swayidle -w \
       timeout 300 '${lockCmd}' \
@@ -145,14 +144,10 @@ in
     # neovim (flake input -> github.com/krisfur/neovim-config)
     "nvim/init.lua".source = "${inputs.neovim-config}/init.lua";
 
-    # 3-finger touchpad swipe -> next/prev desktop. labwc can't bind gestures,
-    # so libinput-gestures (autostarted) fires the Ctrl+Alt+Left/Right desktop-
-    # cycle binds via wtype (Ctrl+Alt, not Super, so a fast swipe can't trip the
-    # Super+drag move). Swipe left = next, swipe right = prev (as in the old Sway setup).
-    "libinput-gestures.conf".text = ''
-      gesture swipe left  3 ${pkgs.wtype}/bin/wtype -M ctrl -M alt -k Right -m alt -m ctrl
-      gesture swipe right 3 ${pkgs.wtype}/bin/wtype -M ctrl -M alt -k Left -m alt -m ctrl
-    '';
+    # (No touchpad swipe-to-switch-desktop: labwc's libinput 3-finger-drag
+    # grabs the focused window on a fast 3-finger swipe and threeFingerDrag=no
+    # isn't honored to disable it, so the window rode along to the new desktop.
+    # Desktops are switched with the keyboard instead - Ctrl+Alt+Left/Right.)
   };
 
   # Environment for the labwc session (labwc reads ~/.config/labwc/environment).

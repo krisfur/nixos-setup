@@ -26,8 +26,6 @@ in
     grim
     slurp
     wl-clipboard
-    wtype
-    libinput-gestures
     brightnessctl
     playerctl
     pavucontrol
