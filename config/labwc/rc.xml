@@ -22,6 +22,8 @@
   <libinput>
     <device category="touchpad">
       <threeFingerDrag>no</threeFingerDrag>
+      <!-- Natural (macOS-style) scrolling: content follows finger direction. -->
+      <naturalScroll>yes</naturalScroll>
     </device>
   </libinput>
 
