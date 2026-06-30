@@ -100,13 +100,9 @@ sudo nix flake update neovim-config --flake /etc/nixos-setup
 sudo nixos-rebuild switch --flake '/etc/nixos-setup#nixos'
 ```
 
-(Prefer keeping the repo in your home, e.g. `~/nixos-setup`, to avoid the
-`sudo git` dance - only the `nixos-rebuild`/`nixos-install` step needs root.)
-
 ## Update everything (like `dnf upgrade` / `pacman -Syu`)
 
-Package versions are pinned by `flake.lock`. Updating = bumping the lock to the
-latest `nixos-unstable` (and other inputs), then rebuilding:
+Package versions are pinned by `flake.lock`. Updating = bumping the lock to the latest `nixos-unstable` (and other inputs), then rebuilding:
 
 ```bash
 sudo nix flake update --flake /etc/nixos-setup     # bump flake.lock
@@ -148,6 +144,33 @@ sudo nixos-rebuild switch --flake '/etc/nixos-setup#nixos'
 
 Find the exact attribute name with `nix search nixpkgs helix` or
 <https://search.nixos.org/packages>. Most apps are just the lowercase name.
+
+## nix-shell
+
+Sometimes you need an additonal dependency for a project and you don't want to add it globaly. For that create a simple `shell.nix` file like:
+
+```nix
+{ pkgs ? import <nixpkgs> {} }:
+
+pkgs.mkShell {
+  buildInputs = with pkgs; [
+    odin
+    raylib
+  ];
+}
+```
+
+source it with:
+
+```bash
+nix-shell
+```
+
+and when done exit with:
+
+```bash
+exit
+```
 
 ## C++26
 
