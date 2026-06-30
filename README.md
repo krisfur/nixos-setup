@@ -1,19 +1,18 @@
 # nixos-setup
 
-Declarative NixOS config: labwc (stacking Wayland WM), Nord theme, Waybar,
-greetd login, and a Nix-managed dev toolchain (latest GCC for C++26, latest
-kernel). Neovim config is pinned as a flake input, shared across machines.
+Declarative NixOS config: labwc (stacking Wayland WM), Nord theme, Waybar, greetd login, and a Nix-managed dev toolchain (latest GCC for C++26, latest kernel). 
+
+Neovim config is pinned as a flake input, shared with non-nix machines machines.
 
 ![screenshot](./screenshot.png)
 
 ## Install (from the minimal NixOS installer)
 
-Boot the minimal ISO. You start as user `nixos` (no password); prefix commands
-with `sudo` or run `sudo -i` for a root shell.
+Boot the minimal ISO. You start as user `nixos` (no password); prefix commands with `sudo` or run `sudo -i` for a root shell.
 
-1. **Get online.** Wired DHCP connects automatically - test with `ping nixos.org`.
-   For wifi, the installer ships NetworkManager (this is the way the NixOS
-   manual recommends):
+1. **Get online.** Wired DHCP connects automatically - test with `ping nixos.org`. 
+
+   For wifi, the installer ships NetworkManager (this is the way the NixOS manual recommends):
 
    ```bash
    nmcli device wifi connect "YOUR_SSID" password "YOUR_PASSWORD"
@@ -21,9 +20,9 @@ with `sudo` or run `sudo -i` for a root shell.
 
    Then verify with `ping -c2 nixos.org`.
 
-2. **Partition + format** the target disk (UEFI/GPT). Replace `/dev/sdX` with
-   your disk (`lsblk` to find it). The LABELs `boot`/`nixos` are what the
-   placeholder hardware config expects:
+2. **Partition + format** the target disk (UEFI/GPT). 
+
+   Replace `/dev/sdX` with your disk (`lsblk` to find it). The LABELs `boot`/`nixos` are what the placeholder hardware config expects:
 
    ```bash
    sudo -i
@@ -59,10 +58,11 @@ with `sudo` or run `sudo -i` for a root shell.
    cd /mnt/etc/nixos-setup
    ```
 
-5. **Generate this machine's hardware config** and stage it. Flakes only see
-   git-tracked files, so it must be `git add`ed (staging is enough - no commit
-   needed) or `nixos-install` won't pick it up. This is the one per-machine
-   file; everything else is shared:
+5. **Generate this machine's hardware config** and stage it. 
+
+   Flakes only see git-tracked files, so it must be `git add`ed (staging is enough - no commit needed) or `nixos-install` won't pick it up. 
+
+   This is the one per-machine file; everything else is shared:
 
    ```bash
    nixos-generate-config --root /mnt --show-hardware-config \
@@ -77,8 +77,7 @@ with `sudo` or run `sudo -i` for a root shell.
    reboot
    ```
 
-After reboot, log in as `kfurman` with password `changeme` and immediately
-change it:
+After reboot, log in as `kfurman` with password `changeme` and immediately change it:
 
 ```bash
 passwd
@@ -102,14 +101,17 @@ sudo nixos-rebuild switch --flake '/etc/nixos-setup#nixos'
 
 ## Update everything (like `dnf upgrade` / `pacman -Syu`)
 
-Package versions are pinned by `flake.lock`. Updating = bumping the lock to the latest `nixos-unstable` (and other inputs), then rebuilding:
+Package versions are pinned by `flake.lock`. 
+
+Updating = bumping the lock to the latest `nixos-unstable` (and other inputs), then rebuilding:
 
 ```bash
 sudo nix flake update --flake /etc/nixos-setup     # bump flake.lock
 sudo nixos-rebuild switch --flake '/etc/nixos-setup#nixos'
 ```
 
-Commit the changed `flake.lock` afterward so the new versions are pinned/shared.
+Commit the changed `flake.lock` afterward so the new versions are pinned/shared. 
+
 To reclaim disk from old generations:
 
 ```bash
@@ -124,9 +126,9 @@ sudo nixos-rebuild switch --rollback
 
 ## Add a package
 
-System packages live in `modules/system/packages.nix` (desktop apps) or
-`modules/system/dev.nix` (dev tooling). Add the attribute name to the relevant
-list and rebuild. E.g. to add the Helix editor, in `packages.nix`:
+System packages live in `modules/system/packages.nix` (desktop apps) or `modules/system/dev.nix` (dev tooling). 
+
+Add the attribute name to the relevant list and rebuild. E.g. to add the Helix editor, in `packages.nix`:
 
 ```nix
   environment.systemPackages = with pkgs; [
@@ -142,12 +144,13 @@ then:
 sudo nixos-rebuild switch --flake '/etc/nixos-setup#nixos'
 ```
 
-Find the exact attribute name with `nix search nixpkgs helix` or
-<https://search.nixos.org/packages>. Most apps are just the lowercase name.
+Find the exact attribute name with `nix search nixpkgs helix` or <https://search.nixos.org/packages>. Most apps are just the lowercase name.
 
 ## nix-shell
 
-Sometimes you need an additonal dependency for a project and you don't want to add it globaly. For that create a simple `shell.nix` file like:
+Sometimes you need an additonal dependency for a project and you don't want to add it globaly. 
+
+For that in the project root create a simple `shell.nix` file like:
 
 ```nix
 { pkgs ? import <nixpkgs> {} }:
@@ -174,24 +177,7 @@ exit
 
 ## C++26
 
-GCC 16.1 is system-wide, so `c++ -std=c++26` (incl. P2996 reflection) works
-anywhere with no per-project setup.
-
-## What maps to what
-
-- Desktop: `labwc` replaces Sway (non-tiling). Keybinds in
-  `config/labwc/rc.xml` mirror the old Sway binds; tiling-only ones
-  (scratchpad, pixel resize) became edge-snapping / window cycling.
-- Bar/launcher/notifications: Waybar + fuzzel + swaync, Nord-themed.
-  Waybar uses `wlr/taskbar` instead of `sway/workspaces` (no sway IPC).
-  Network is the NetworkManager applet/editor (no nmtui).
-- Browser: Helium, as its auto-updating AppImage. First run of `helium`
-  (e.g. Super+B) downloads the latest release into `~/Applications` and it
-  self-updates after that. `programs.appimage.binfmt` runs it.
-- Dev tooling: moved from `mise` to Nix (`modules/system/dev.nix`).
-  GCC 16.1 system-wide for `-std=c++26` (P2996 reflection).
-  `fex` is dropped; Nix handles binaries/flakes natively.
-- Neovim: pinned flake input `neovim-config` (`github.com/krisfur/neovim-config`).
+GCC 16.1 is system-wide, so `c++ -std=c++26` (incl. P2996 reflection) works anywhere with no per-project setup.
 
 ## Layout
 
