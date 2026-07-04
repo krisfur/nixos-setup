@@ -12,6 +12,9 @@
   programs.appimage.enable = true;
   programs.appimage.binfmt = true;
 
+  # Steam runs in an FHS env and enables 32-bit graphics libs automatically.
+  programs.steam.enable = true;
+
   environment.systemPackages = with pkgs; [
     ghostty            # terminal
     networkmanagerapplet # nm-applet tray + nm-connection-editor (replaces nmtui)
