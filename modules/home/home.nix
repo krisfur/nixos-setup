@@ -5,6 +5,16 @@ let
   wallpaper = "${config.xdg.configHome}/labwc/wallpaper.png";
   lockCmd = "${pkgs.swaylock-effects}/bin/swaylock -f -i ${wallpaper} --effect-blur 7x5 --config ${config.xdg.configHome}/swaylock/config";
 
+  # Controller input never reaches the compositor's seat, so swayidle counts a
+  # gamepad session as idle and locks mid-game. Steam wraps every game launch
+  # (native and Proton) in a "reaper SteamLaunch AppId=..." process that lives
+  # for exactly the game's lifetime, so skip the idle lock while one exists.
+  # Note: after the game exits the timer only re-arms on the next input event.
+  idleLockCmd = pkgs.writeShellScript "idle-lock" ''
+    ${pkgs.procps}/bin/pgrep -f 'SteamLaunch AppId=' >/dev/null && exit 0
+    exec ${lockCmd}
+  '';
+
   # labwc reads ~/.config/labwc/autostart on startup. We generate it here so
   # the helper binaries resolve to their Nix store paths.
   autostart = pkgs.writeShellScript "labwc-autostart" ''
@@ -26,7 +36,7 @@ let
     ${pkgs.networkmanagerapplet}/bin/nm-applet --indicator &
     ${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1 &
     ${pkgs.swayidle}/bin/swayidle -w \
-      timeout 300 '${lockCmd}' \
+      timeout 900 '${idleLockCmd}' \
       before-sleep '${lockCmd}' &
   '';
 
