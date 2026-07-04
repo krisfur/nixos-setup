@@ -45,6 +45,7 @@
     git
     lazygit
     jq
+    cloc
     claude-code
 
     # Neovim language servers + formatters. The nvim config no longer uses

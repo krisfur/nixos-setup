@@ -153,6 +153,11 @@ in
     "swaync/style.css".source = "${configDir}/swaync/style.css";
     "swaylock/config".source = "${configDir}/swaylock/config";
 
+    # xdg-terminal-exec (packages.nix): glib consults it to launch
+    # Terminal=true desktop entries (e.g. "Open With Neovim wrapper");
+    # this picks ghostty as that terminal.
+    "xdg-terminals.list".text = "com.mitchellh.ghostty.desktop\n";
+
     # labwc compositor
     "labwc/rc.xml".source = "${configDir}/labwc/rc.xml";
     "labwc/menu.xml".source = "${configDir}/labwc/menu.xml";

@@ -17,8 +17,15 @@
 
   environment.systemPackages = with pkgs; [
     ghostty            # terminal
+    # glib only knows a hardcoded terminal list (xterm, konsole, ...) when
+    # launching Terminal=true desktop entries ("Open With Neovim wrapper"),
+    # but checks for xdg-terminal-exec first. Ghostty is selected via
+    # ~/.config/xdg-terminals.list (home.nix).
+    xdg-terminal-exec
     networkmanagerapplet # nm-applet tray + nm-connection-editor (replaces nmtui)
+    discord            # chat
     mpv                # video
+    ffmpeg             # video/audio transcoding CLI
     imv                # image viewer
     viu                # terminal image preview
     gimp               # image editing
