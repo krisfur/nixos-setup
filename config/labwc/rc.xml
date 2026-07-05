@@ -47,7 +47,12 @@
 
   <keyboard>
     <!-- Launchers -->
-    <keybind key="W-Return"><action name="Execute" command="ghostty" /></keybind>
+    <!-- ghostty gets gtk-single-instance=false everywhere it is launched
+         (also menu.xml, waybar, fuzzel.ini, desktop entry): its default
+         ("detect") treats compositor spawns as desktop launches and merges
+         all windows into one process, which segfaults entirely when any one
+         window closes (ghostty 1.3.1, ghostty-org/ghostty#5868). -->
+    <keybind key="W-Return"><action name="Execute" command="ghostty --gtk-single-instance=false" /></keybind>
     <keybind key="W-space"><action name="Execute" command="fuzzel" /></keybind>
     <keybind key="W-e"><action name="Execute" command="thunar" /></keybind>
     <keybind key="W-b"><action name="Execute" command="helium" /></keybind>

@@ -85,6 +85,27 @@ in
     };
   };
 
+  # Ghostty single-instance mode segfaults when closing one of several windows
+  # sharing the process, killing them all (ghostty-org/ghostty#5868). Force it
+  # off at every launch point: this override (shadows the stock desktop entry,
+  # keeping its X-TerminalArg* keys for xdg-terminal-exec below), labwc
+  # rc.xml/menu.xml, waybar on-clicks, and fuzzel.ini.
+  xdg.desktopEntries."com.mitchellh.ghostty" = {
+    name = "Ghostty";
+    genericName = "Terminal Emulator";
+    exec = "ghostty --gtk-single-instance=false";
+    icon = "com.mitchellh.ghostty";
+    categories = [ "System" "TerminalEmulator" ];
+    terminal = false;
+    settings = {
+      X-TerminalArgExec = "-e";
+      X-TerminalArgTitle = "--title=";
+      X-TerminalArgAppId = "--class=";
+      X-TerminalArgDir = "--working-directory=";
+      X-TerminalArgHold = "--wait-after-command";
+    };
+  };
+
   # --- GTK / icon theming (replaces the sway `exec gsettings ...` lines) ---
   gtk = {
     enable = true;
