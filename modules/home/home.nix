@@ -123,6 +123,18 @@ in
   };
   dconf.settings."org/gnome/desktop/interface".color-scheme = "prefer-dark";
 
+  # Speaker DSP: the P14s speakers are tuned for Windows' Dolby driver and
+  # sound tinny without it. EasyEffects runs as a background service and
+  # applies a community ThinkPad EQ preset (bass enhancer + multiband
+  # compressor) to the speakers only — autoload rules (see xdg.configFile
+  # below) switch to a flat no-op preset when headphones are active, since
+  # headphones don't need speaker compensation. The startup preset is a
+  # fallback for before the first autoload event fires.
+  services.easyeffects = {
+    enable = true;
+    preset = "thinkpad-unsuck";
+  };
+
   # Modern cursor (the default is the chunky X11 fallback). Also exported to
   # the labwc environment below so the compositor itself uses it.
   home.pointerCursor = {
@@ -174,6 +186,17 @@ in
     # notifications + lockscreen
     "swaync/style.css".source = "${configDir}/swaync/style.css";
     "swaylock/config".source = "${configDir}/swaylock/config";
+
+    # EasyEffects output preset (from sebastian-de/easyeffects-thinkpad-unsuck)
+    # plus a flat no-op preset, with autoload rules binding them per device:
+    # speakers get the EQ, headphones get flat. Autoload filenames must be
+    # "<node name>:<route name>.json" to match.
+    "easyeffects/output/thinkpad-unsuck.json".source = "${configDir}/easyeffects/thinkpad-unsuck.json";
+    "easyeffects/output/flat.json".source = "${configDir}/easyeffects/flat.json";
+    "easyeffects/autoload/output/alsa_output.pci-0000_c4_00.6.HiFi__Speaker__sink:[Out] Speaker.json".source =
+      "${configDir}/easyeffects/autoload-speaker.json";
+    "easyeffects/autoload/output/alsa_output.pci-0000_c4_00.6.HiFi__Headphones__sink:[Out] Headphones.json".source =
+      "${configDir}/easyeffects/autoload-headphones.json";
 
     # xdg-terminal-exec (packages.nix): glib consults it to launch
     # Terminal=true desktop entries (e.g. "Open With Neovim wrapper");

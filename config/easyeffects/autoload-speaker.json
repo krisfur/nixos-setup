@@ -1,0 +1,6 @@
+{
+    "device": "alsa_output.pci-0000_c4_00.6.HiFi__Speaker__sink",
+    "device-description": "Ryzen HD Audio Controller Speaker",
+    "device-profile": "[Out] Speaker",
+    "preset-name": "thinkpad-unsuck"
+}
