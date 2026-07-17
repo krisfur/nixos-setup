@@ -43,6 +43,31 @@
 
   services.power-profiles-daemon.enable = true;
 
+  # Auto-switch power profile on plug/unplug: performance on AC, power-saver
+  # on battery. Runs once at boot for the initial state, then re-runs via the
+  # udev rule below whenever the mains adapter changes state. Manual overrides
+  # (waybar's profile cycler) stick until the next plug/unplug event.
+  systemd.services.power-profile-on-ac = {
+    description = "Set power profile based on AC state";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "power-profiles-daemon.service" ];
+    wants = [ "power-profiles-daemon.service" ];
+    serviceConfig.Type = "oneshot";
+    script = ''
+      if [ "$(cat /sys/class/power_supply/AC/online)" = "1" ]; then
+        ${pkgs.power-profiles-daemon}/bin/powerprofilesctl set performance
+      else
+        ${pkgs.power-profiles-daemon}/bin/powerprofilesctl set power-saver
+      fi
+    '';
+  };
+  # Match on type=Mains rather than the device name so this survives the
+  # adapter enumerating under a different name. --no-block because udev RUN
+  # handlers must not wait on other services.
+  services.udev.extraRules = ''
+    SUBSYSTEM=="power_supply", ATTR{type}=="Mains", RUN+="${pkgs.systemd}/bin/systemctl start --no-block power-profile-on-ac.service"
+  '';
+
   users.users.kfurman = {
     isNormalUser = true;
     description = "Krzysztof Furman";
