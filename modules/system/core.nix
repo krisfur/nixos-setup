@@ -47,14 +47,15 @@
   # on battery. Runs once at boot for the initial state, then re-runs via the
   # udev rule below whenever the mains adapter changes state. Manual overrides
   # (waybar's profile cycler) stick until the next plug/unplug event.
-  # Deliberately not ordered after power-profiles-daemon.service: that unit is
-  # ordered after multi-user.target here, so depending on it creates a systemd
-  # ordering cycle. powerprofilesctl D-Bus-activates the daemon on demand, so
-  # ordering after dbus is sufficient.
+  # Must hang off graphical.target, not multi-user.target: upstream ppd has
+  # After=multi-user.target, so a multi-user-wanted unit that waits on ppd
+  # (even implicitly via D-Bus activation) deadlocks boot until the 25s D-Bus
+  # timeout and fails with an empty profile list.
   systemd.services.power-profile-on-ac = {
     description = "Set power profile based on AC state";
-    wantedBy = [ "multi-user.target" ];
-    after = [ "dbus.service" ];
+    wantedBy = [ "graphical.target" ];
+    after = [ "power-profiles-daemon.service" ];
+    wants = [ "power-profiles-daemon.service" ];
     serviceConfig.Type = "oneshot";
     script = ''
       if [ "$(cat /sys/class/power_supply/AC/online)" = "1" ]; then
