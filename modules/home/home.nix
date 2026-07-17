@@ -126,6 +126,7 @@ in
   # Modern cursor (the default is the chunky X11 fallback). Also exported to
   # the labwc environment below so the compositor itself uses it.
   home.pointerCursor = {
+    enable = true;
     gtk.enable = true;
     name = "Bibata-Modern-Ice";
     package = pkgs.bibata-cursors;
