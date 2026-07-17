@@ -1,4 +1,4 @@
-{ pkgs, config, inputs, ... }:
+{ pkgs, config, lib, inputs, ... }:
 
 let
   configDir = ../../config;
@@ -126,14 +126,35 @@ in
   # Speaker DSP: the P14s speakers are tuned for Windows' Dolby driver and
   # sound tinny without it. EasyEffects runs as a background service and
   # applies a community ThinkPad EQ preset (bass enhancer + multiband
-  # compressor) to the speakers only — autoload rules (see xdg.configFile
-  # below) switch to a flat no-op preset when headphones are active, since
-  # headphones don't need speaker compensation. The startup preset is a
-  # fallback for before the first autoload event fires.
+  # compressor). Its output is pinned to the internal speaker sink (see the
+  # activation script below), so headphones, DACs, and any other output play
+  # untouched — no per-device presets needed.
   services.easyeffects = {
     enable = true;
     preset = "thinkpad-unsuck";
   };
+
+  # EasyEffects 8 stores settings in a KConfig file it rewrites at runtime, so
+  # the speaker pin can't be a read-only store symlink like the configs below.
+  # Instead, enforce the two [StreamOutputs] keys on every activation:
+  # useDefaultOutputDevice=false stops EasyEffects from following the default
+  # sink, and outputDevice fixes it to the internal speakers.
+  home.activation.easyeffectsPinSpeakers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run ${pkgs.python3}/bin/python3 - "${config.xdg.configHome}/easyeffects/db/easyeffectsrc" <<'EOF'
+    import configparser, os, sys
+    path = sys.argv[1]
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    cp = configparser.ConfigParser()
+    cp.optionxform = str
+    cp.read(path)
+    if "StreamOutputs" not in cp:
+        cp["StreamOutputs"] = {}
+    cp["StreamOutputs"]["useDefaultOutputDevice"] = "false"
+    cp["StreamOutputs"]["outputDevice"] = "alsa_output.pci-0000_c4_00.6.HiFi__Speaker__sink"
+    with open(path, "w") as f:
+        cp.write(f, space_around_delimiters=False)
+    EOF
+  '';
 
   # Modern cursor (the default is the chunky X11 fallback). Also exported to
   # the labwc environment below so the compositor itself uses it.
