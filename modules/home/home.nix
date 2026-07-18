@@ -38,6 +38,12 @@ let
     ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd \
       SSH_AUTH_SOCK GNOME_KEYRING_CONTROL DISPLAY WAYLAND_DISPLAY 2>/dev/null || true
 
+    # Tell systemd a graphical session is up so user units wanted by
+    # graphical-session.target (easyeffects) start. That target refuses
+    # manual starts, so go through labwc-session.target, which BindsTo it.
+    # Must run after the env push above so those units see WAYLAND_DISPLAY.
+    ${pkgs.systemd}/bin/systemctl --user start labwc-session.target
+
     ${pkgs.swaybg}/bin/swaybg -i ${wallpaper} -m fill &
     ${pkgs.waybar}/bin/waybar &
     ${pkgs.swaynotificationcenter}/bin/swaync &
@@ -143,6 +149,16 @@ in
     preset = "thinkpad-unsuck";
   };
 
+  # Session marker started by labwc's autostart (see above). labwc itself
+  # never activates graphical-session.target, and that target refuses manual
+  # starts — the supported pattern is a session-scoped target bound to it.
+  systemd.user.targets.labwc-session = {
+    Unit = {
+      Description = "labwc compositor session";
+      BindsTo = [ "graphical-session.target" ];
+    };
+  };
+
   # EasyEffects 8 stores settings in a KConfig file it rewrites at runtime, so
   # the speaker pin can't be a read-only store symlink like the configs below.
   # Instead, enforce the two [StreamOutputs] keys on every activation:
@@ -217,17 +233,6 @@ in
     "swaync/style.css".source = "${configDir}/swaync/style.css";
     "swaylock/config".source = "${configDir}/swaylock/config";
 
-    # EasyEffects output preset (from sebastian-de/easyeffects-thinkpad-unsuck)
-    # plus a flat no-op preset, with autoload rules binding them per device:
-    # speakers get the EQ, headphones get flat. Autoload filenames must be
-    # "<node name>:<route name>.json" to match.
-    "easyeffects/output/thinkpad-unsuck.json".source = "${configDir}/easyeffects/thinkpad-unsuck.json";
-    "easyeffects/output/flat.json".source = "${configDir}/easyeffects/flat.json";
-    "easyeffects/autoload/output/alsa_output.pci-0000_c4_00.6.HiFi__Speaker__sink:[Out] Speaker.json".source =
-      "${configDir}/easyeffects/autoload-speaker.json";
-    "easyeffects/autoload/output/alsa_output.pci-0000_c4_00.6.HiFi__Headphones__sink:[Out] Headphones.json".source =
-      "${configDir}/easyeffects/autoload-headphones.json";
-
     # xdg-terminal-exec (packages.nix): glib consults it to launch
     # Terminal=true desktop entries (e.g. "Open With Neovim wrapper");
     # this picks ghostty as that terminal.
@@ -252,6 +257,14 @@ in
     # isn't honored to disable it, so the window rode along to the new desktop.
     # Desktops are switched with the keyboard instead - Ctrl+Alt+Left/Right.)
   };
+
+  # EasyEffects output preset (from sebastian-de/easyeffects-thinkpad-unsuck).
+  # EasyEffects 8 reads user presets from XDG data, not XDG config — it
+  # actively migrates (moves) anything found under ~/.config/easyeffects to
+  # ~/.local/share/easyeffects at startup, so the link must live here or EE
+  # will fight home-manager over it.
+  xdg.dataFile."easyeffects/output/thinkpad-unsuck.json".source =
+    "${configDir}/easyeffects/thinkpad-unsuck.json";
 
   # Environment for the labwc session (labwc reads ~/.config/labwc/environment).
   home.file.".config/labwc/environment".text = ''
