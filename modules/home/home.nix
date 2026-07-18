@@ -46,7 +46,10 @@ let
 
     ${pkgs.swaybg}/bin/swaybg -i ${wallpaper} -m fill &
     ${pkgs.waybar}/bin/waybar &
-    ${pkgs.swaynotificationcenter}/bin/swaync &
+    # swaync is NOT launched here: its package ships a user unit wired to
+    # graphical-session.target, so the systemctl line above starts it. A
+    # second manual launch here loses the bus-name race and leaves a failed
+    # swaync.service unit behind.
     ${pkgs.networkmanagerapplet}/bin/nm-applet --indicator &
     ${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1 &
     ${pkgs.swayidle}/bin/swayidle -w \
@@ -148,6 +151,23 @@ in
     enable = true;
     preset = "thinkpad-unsuck";
   };
+
+  # EasyEffects silently ignores --load-preset on its own service start (the
+  # flag is handled before the pipeline is ready), so a fresh boot came up
+  # with an empty effects chain. Re-issue the load over IPC once the instance
+  # is up, and verify against PipeWire itself: the preset's effect nodes
+  # (ee_soe_*) only exist when the chain is actually populated.
+  systemd.user.services.easyeffects.Service.ExecStartPost =
+    "${pkgs.writeShellScript "easyeffects-load-preset" ''
+      sleep 2
+      for _ in $(${pkgs.coreutils}/bin/seq 1 30); do
+        ${pkgs.easyeffects}/bin/easyeffects -l thinkpad-unsuck >/dev/null 2>&1
+        ${pkgs.pipewire}/bin/pw-dump 2>/dev/null | ${pkgs.gnugrep}/bin/grep -q ee_soe_bass_enhancer && exit 0
+        sleep 1
+      done
+      echo "easyeffects: preset thinkpad-unsuck failed to load" >&2
+      exit 1
+    ''}";
 
   # Session marker started by labwc's autostart (see above). labwc itself
   # never activates graphical-session.target, and that target refuses manual
