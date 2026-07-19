@@ -81,7 +81,10 @@
         },
         "format": "{icon} {capacity}%",
         "format-charging": "󰂄 {capacity}%",
-        "format-icons": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"]
+        "format-icons": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+        "tooltip-format-discharging": "{timeTo}\n↓ {power:.1f} W",
+        "tooltip-format-charging": "{timeTo}\n↑ {power:.1f} W",
+        "tooltip-format": "{timeTo}\n{power:.1f} W"
     },
 
     "custom/notification": {
