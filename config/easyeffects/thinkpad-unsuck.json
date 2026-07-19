@@ -1,5 +1,15 @@
 {
     "output": {
+        "autogain#0": {
+            "bypass": false,
+            "force-silence": false,
+            "input-gain": 0.0,
+            "maximum-history": 15,
+            "output-gain": 0.0,
+            "reference": "Geometric Mean (MSI)",
+            "silence-threshold": -70.0,
+            "target": -10.9
+        },
         "bass_enhancer#0": {
             "amount": 22.0,
             "blend": 0.0,
@@ -295,6 +305,7 @@
             "bass_enhancer#0",
             "multiband_compressor#0",
             "stereo_tools#0",
+            "autogain#0",
             "limiter#0"
         ],
         "stereo_tools#0": {
