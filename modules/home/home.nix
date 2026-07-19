@@ -76,14 +76,12 @@ let
     # Hardware video decode (VA-API): Chromium ships with it disabled on
     # Linux, so YouTube burns CPU software-decoding VP9/AV1 (~3-5W extra).
     # The feature flag was renamed around Chromium 131; pass old and new
-    # names, unknown ones are ignored. The AppImage bundles no libva and
-    # Chromium dlopens libva.so.2 at runtime, so on NixOS it must come via
-    # LD_LIBRARY_PATH (checked: without it about:gpu shows an empty "Video
-    # Acceleration Information" and decode silently stays on CPU). LIBVA_*
-    # then points that libva at the host Mesa radeonsi driver.
-    export LD_LIBRARY_PATH=${pkgs.libva}/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
-    export LIBVA_DRIVER_NAME=radeonsi
-    export LIBVA_DRIVERS_PATH=/run/opengl-driver/lib/dri
+    # names, unknown ones are ignored. The libva library itself is baked
+    # into the appimage-run sandbox (see modules/system/packages.nix) —
+    # env vars don't reliably survive into the AppImage. Success check:
+    # about:gpu's "Video Acceleration Information" lists decode profiles
+    # (an empty section means CPU decode despite "Hardware accelerated"
+    # in the feature list above it).
     exec "$app" \
       --enable-features=AcceleratedVideoDecodeLinuxGL,AcceleratedVideoDecodeLinuxZeroCopyGL,VaapiVideoDecodeLinuxGL,VaapiIgnoreDriverChecks \
       "$@"

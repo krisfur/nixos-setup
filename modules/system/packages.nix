@@ -11,6 +11,14 @@
   # built-in zsync auto-update keeps functioning.
   programs.appimage.enable = true;
   programs.appimage.binfmt = true;
+  # Helium (Chromium) dlopens libva.so.2 for hardware video decode, but the
+  # AppImage doesn't bundle it and env-var relaying into the FHS sandbox is
+  # unreliable (Helium's AppRun rewrites LD_LIBRARY_PATH). Bake libva into
+  # the sandbox instead; nixpkgs libva finds the radeonsi driver under
+  # /run/opengl-driver/lib/dri by itself, no LIBVA_* env needed.
+  programs.appimage.package = pkgs.appimage-run.override {
+    extraPkgs = pkgs: [ pkgs.libva ];
+  };
 
   # Steam runs in an FHS env and enables 32-bit graphics libs automatically.
   programs.steam.enable = true;
