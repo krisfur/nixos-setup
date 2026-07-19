@@ -73,7 +73,17 @@ let
       ${pkgs.curl}/bin/curl -fL "$url" -o "$app"
       chmod +x "$app"
     fi
-    exec "$app" "$@"
+    # Hardware video decode (VA-API): Chromium ships with it disabled on
+    # Linux, so YouTube burns CPU software-decoding VP9/AV1 (~3-5W extra).
+    # The feature flag was renamed around Chromium 131; pass old and new
+    # names, unknown ones are ignored. LIBVA_* points the AppImage's bundled
+    # libva at the host Mesa radeonsi driver, which it can't find on its own
+    # on NixOS.
+    export LIBVA_DRIVER_NAME=radeonsi
+    export LIBVA_DRIVERS_PATH=/run/opengl-driver/lib/dri
+    exec "$app" \
+      --enable-features=AcceleratedVideoDecodeLinuxGL,AcceleratedVideoDecodeLinuxZeroCopyGL,VaapiVideoDecodeLinuxGL,VaapiIgnoreDriverChecks \
+      "$@"
   '';
 in
 {

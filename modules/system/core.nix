@@ -43,6 +43,21 @@
 
   services.power-profiles-daemon.enable = true;
 
+  # ppd 0.30 ships optional amdgpu actions whose on/off state lives in
+  # /var/lib/power-profiles-daemon, not in config. Pin both here instead:
+  # block amdgpu_panel_power (ABM) from loading at all — it visibly dims the
+  # panel on power-saver, which is this machine's default unplugged state —
+  # and re-assert amdgpu_dpm (GPU clock tuning, no visual effect) on every
+  # daemon start so the stateful toggle can never drift. The leading "" in
+  # ExecStart clears the upstream unit's entry before replacing it.
+  systemd.services.power-profiles-daemon.serviceConfig = {
+    ExecStart = [
+      ""
+      "${pkgs.power-profiles-daemon}/libexec/power-profiles-daemon --block-action amdgpu_panel_power"
+    ];
+    ExecStartPost = "${pkgs.power-profiles-daemon}/bin/powerprofilesctl configure-action --enable amdgpu_dpm";
+  };
+
   # Auto-switch power profile on plug/unplug: performance on AC, power-saver
   # on battery. Runs once at boot for the initial state, then re-runs via the
   # udev rule below whenever the mains adapter changes state. Manual overrides
