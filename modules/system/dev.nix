@@ -80,7 +80,10 @@
   programs.nix-ld.enable = true;
 
   # Docker (the old sway setup enabled the daemon + added the user to docker).
+  # Socket-activated: the daemon only starts on first docker command instead
+  # of sitting in RAM from boot (~90 MiB idle).
   virtualisation.docker.enable = true;
+  virtualisation.docker.enableOnBoot = false;
 
   # uinput/input access for tooling that needs it.
   hardware.uinput.enable = true;
