@@ -165,7 +165,37 @@ in
     };
     # Keep applying Nordic to GTK4 too (the old setup themed gtk-4.0). Use
     # `null` here instead if you'd rather let libadwaita apps render natively.
+    # (GTK4 ignores gtk-theme-name, so home-manager makes this work by writing
+    # a ~/.config/gtk-4.0/gtk.css that @imports the theme - which libadwaita
+    # apps like ghostty do read. gtk4.extraCss below is appended after that
+    # import, so it overrides the theme.)
     gtk4.theme = config.gtk.theme;
+
+    # Restore keyboard focus rings. Nordic's GTK4 stylesheet sets a *universal*
+    # `* { outline-width: 0px; }`, which makes every focus ring zero-width in
+    # every GTK4/libadwaita app: dialogs (e.g. ghostty's confirm-close prompt
+    # on Super+W) gave no hint which of Cancel/Close was keyboard-selected, only
+    # hover highlighted anything. `*` has zero specificity, so any real selector
+    # beats it. Ring color is Nord frost #88c0d0, matching the sway focus border.
+    # GTK4 only: Nordic's GTK3 sheet has no such rule (its ring is faint but
+    # present), and GTK3 has no :focus-visible to key off.
+    gtk4.extraCss = ''
+      :focus-visible {
+        outline-color: #88c0d0;
+        outline-style: solid;
+        outline-width: 2px;
+        outline-offset: -2px;
+      }
+
+      /* Dialog action buttons (libadwaita puts them in .response-area) sit on a
+         busy background, so add an inner ring to make the selection obvious. */
+      .response-area button:focus-visible,
+      .dialog-action-area button:focus-visible,
+      dialog button:focus-visible {
+        box-shadow: inset 0 0 0 2px rgba(136, 192, 208, 0.5);
+      }
+    '';
+
     iconTheme = {
       name = "Papirus-Dark";
       package = pkgs.papirus-icon-theme;
