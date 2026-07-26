@@ -15,7 +15,7 @@ let
     exec ${lockCmd}
   '';
 
-  # Suspend after an hour idle (same suspend as closing the lid), with the
+  # Suspend after 30 minutes idle (same suspend as closing the lid), with the
   # same skip-while-gaming guard as the lock. Media playback holds the
   # Wayland idle inhibitor, which already blocks all swayidle timeouts.
   idleSuspendCmd = pkgs.writeShellScript "idle-suspend" ''
@@ -54,7 +54,7 @@ let
     ${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1 &
     ${pkgs.swayidle}/bin/swayidle -w \
       timeout 900 '${idleLockCmd}' \
-      timeout 3600 '${idleSuspendCmd}' \
+      timeout 1800 '${idleSuspendCmd}' \
       before-sleep '${lockCmd}' &
   '';
 
