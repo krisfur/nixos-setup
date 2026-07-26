@@ -88,19 +88,22 @@ let
   '';
 
   # Claude Code. Not from nixpkgs: the read-only store breaks its self-updater
-  # (`claude update` prints success and no-ops) and nixpkgs trails upstream. Same
-  # pattern as Helium above — a wrapper that installs the latest into pnpm's
-  # writable global prefix on first run, then execs it; Claude self-updates in
-  # place thereafter (the prefix is writable, unlike the store). Nothing to run
-  # by hand. node comes from nix so `claude` resolves it regardless of caller.
+  # (`claude update` prints success and no-ops) and nixpkgs trails upstream.
+  # pnpm's global prefix can't work either — on NixOS pnpm resolves it relative
+  # to the store binary and hits EROFS. So, like Helium above, a wrapper runs
+  # Anthropic's official installer on first launch. That drops a self-updating
+  # native ELF into ~/.local/bin (writable, so `claude update` genuinely works
+  # and it auto-updates thereafter) — decoupled from nixos-rebuild, always
+  # latest. The binary is dynamically linked; nix-ld (dev.nix) provides its
+  # loader. Nothing to run by hand. The installer touches no shell rc files;
+  # the tools it needs are pinned onto PATH here rather than assumed present.
   claude = pkgs.writeShellScriptBin "claude" ''
     set -euo pipefail
-    export PNPM_HOME="$HOME/.local/share/pnpm"
-    export PATH="$PNPM_HOME:${pkgs.nodejs_22}/bin:$PATH"
-    bin="$PNPM_HOME/claude"
+    bin="$HOME/.local/bin/claude"
     if [ ! -x "$bin" ]; then
-      echo "Installing claude-code into pnpm global prefix..." >&2
-      ${pkgs.pnpm}/bin/pnpm add -g @anthropic-ai/claude-code
+      echo "Fetching latest Claude Code (native, self-updating)..." >&2
+      export PATH="${lib.makeBinPath [ pkgs.curl pkgs.coreutils pkgs.jq pkgs.gnused pkgs.gnugrep pkgs.bash ]}:$PATH"
+      curl -fsSL https://claude.ai/install.sh | bash
     fi
     exec "$bin" "$@"
   '';

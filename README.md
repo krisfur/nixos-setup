@@ -114,10 +114,10 @@ Commit the changed `flake.lock` afterward so the new versions are pinned/shared.
 
 `claude-code` is the exception: it's not in Nix (the read-only store breaks its
 self-updater and nixpkgs trails upstream). A wrapper in `modules/home/home.nix`
-(same pattern as the Helium browser) installs the latest release into pnpm's
-writable global prefix on first launch, and Claude self-updates in place after
-that — nothing to run by hand, and `sudo nixos-rebuild switch` remains the only
-command you invoke.
+(same pattern as the Helium browser) runs Anthropic's official installer on
+first launch, dropping a self-updating native binary into `~/.local/bin` (run
+via `nix-ld`). It self-updates in place after that — nothing to run by hand, and
+`sudo nixos-rebuild switch` remains the only command you invoke.
 
 To reclaim disk from old generations:
 

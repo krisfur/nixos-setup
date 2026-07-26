@@ -48,10 +48,11 @@
     cloc
     # claude-code is NOT installed from nixpkgs: the store is read-only, so its
     # built-in `claude update` can never replace the binary (it prints success
-    # and does nothing), and nixpkgs trails upstream npm releases by hours-days.
-    # It's provided instead by a self-installing wrapper in modules/home/home.nix
-    # that drops the latest into pnpm's writable global prefix on first run and
-    # self-updates thereafter. nodejs_22 (above) is its runtime; pnpm manages it.
+    # and does nothing), and nixpkgs trails upstream releases by hours-days. It's
+    # provided instead by a self-installing wrapper in modules/home/home.nix that
+    # runs Anthropic's official installer on first launch (native self-updating
+    # binary under ~/.local/bin, run via nix-ld below). pnpm is NOT used for it —
+    # pnpm's global prefix hits a read-only-store EROFS on NixOS.
 
     # Neovim language servers + formatters. The nvim config no longer uses
     # Mason: every server in its `servers` table and every conform formatter
