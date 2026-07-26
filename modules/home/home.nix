@@ -2,7 +2,7 @@
 
 let
   configDir = ../../config;
-  wallpaper = "${config.xdg.configHome}/labwc/wallpaper.png";
+  wallpaper = "${config.xdg.configHome}/sway/wallpaper.png";
   lockCmd = "${pkgs.swaylock-effects}/bin/swaylock -f -i ${wallpaper} --effect-blur 7x5 --config ${config.xdg.configHome}/swaylock/config";
 
   # Controller input never reaches the compositor's seat, so swayidle counts a
@@ -23,9 +23,9 @@ let
     exec ${pkgs.systemd}/bin/systemctl suspend
   '';
 
-  # labwc reads ~/.config/labwc/autostart on startup. We generate it here so
-  # the helper binaries resolve to their Nix store paths.
-  autostart = pkgs.writeShellScript "labwc-autostart" ''
+  # sway execs ~/.config/sway/autostart (see the `exec` line in the sway config).
+  # We generate it here so the helper binaries resolve to their Nix store paths.
+  autostart = pkgs.writeShellScript "sway-autostart" ''
     # pam_gnome_keyring unlocks a keyring daemon at login, but D-Bus sometimes
     # activates a second, *locked* secrets daemon before the unlocked one claims
     # the bus name - the intermittent keyring prompt after a rebuild+reboot.
@@ -40,9 +40,9 @@ let
 
     # Tell systemd a graphical session is up so user units wanted by
     # graphical-session.target (easyeffects) start. That target refuses
-    # manual starts, so go through labwc-session.target, which BindsTo it.
+    # manual starts, so go through sway-session.target, which BindsTo it.
     # Must run after the env push above so those units see WAYLAND_DISPLAY.
-    ${pkgs.systemd}/bin/systemctl --user start labwc-session.target
+    ${pkgs.systemd}/bin/systemctl --user start sway-session.target
 
     ${pkgs.swaybg}/bin/swaybg -i ${wallpaper} -m fill &
     ${pkgs.waybar}/bin/waybar &
@@ -86,6 +86,24 @@ let
       --enable-features=AcceleratedVideoDecodeLinuxGL,AcceleratedVideoDecodeLinuxZeroCopyGL,VaapiVideoDecodeLinuxGL,VaapiIgnoreDriverChecks \
       "$@"
   '';
+
+  # Claude Code. Not from nixpkgs: the read-only store breaks its self-updater
+  # (`claude update` prints success and no-ops) and nixpkgs trails upstream. Same
+  # pattern as Helium above — a wrapper that installs the latest into pnpm's
+  # writable global prefix on first run, then execs it; Claude self-updates in
+  # place thereafter (the prefix is writable, unlike the store). Nothing to run
+  # by hand. node comes from nix so `claude` resolves it regardless of caller.
+  claude = pkgs.writeShellScriptBin "claude" ''
+    set -euo pipefail
+    export PNPM_HOME="$HOME/.local/share/pnpm"
+    export PATH="$PNPM_HOME:${pkgs.nodejs_22}/bin:$PATH"
+    bin="$PNPM_HOME/claude"
+    if [ ! -x "$bin" ]; then
+      echo "Installing claude-code into pnpm global prefix..." >&2
+      ${pkgs.pnpm}/bin/pnpm add -g @anthropic-ai/claude-code
+    fi
+    exec "$bin" "$@"
+  '';
 in
 {
   home.username = "kfurman";
@@ -94,7 +112,7 @@ in
 
   programs.home-manager.enable = true;
 
-  home.packages = [ helium ];
+  home.packages = [ helium claude ];
 
   # Desktop entry so Helium shows in fuzzel and as the default browser.
   xdg.desktopEntries.helium = {
@@ -117,8 +135,8 @@ in
   # Ghostty single-instance mode segfaults when closing one of several windows
   # sharing the process, killing them all (ghostty-org/ghostty#5868). Force it
   # off at every launch point: this override (shadows the stock desktop entry,
-  # keeping its X-TerminalArg* keys for xdg-terminal-exec below), labwc
-  # rc.xml/menu.xml, waybar on-clicks, and fuzzel.ini.
+  # keeping its X-TerminalArg* keys for xdg-terminal-exec below), the sway
+  # config, waybar on-clicks, and fuzzel.ini.
   xdg.desktopEntries."com.mitchellh.ghostty" = {
     name = "Ghostty";
     genericName = "Terminal Emulator";
@@ -180,12 +198,12 @@ in
       exit 1
     ''}";
 
-  # Session marker started by labwc's autostart (see above). labwc itself
-  # never activates graphical-session.target, and that target refuses manual
-  # starts — the supported pattern is a session-scoped target bound to it.
-  systemd.user.targets.labwc-session = {
+  # Session marker started by sway's autostart (see above). sway itself never
+  # activates graphical-session.target, and that target refuses manual starts —
+  # the supported pattern is a session-scoped target bound to it.
+  systemd.user.targets.sway-session = {
     Unit = {
-      Description = "labwc compositor session";
+      Description = "sway compositor session";
       BindsTo = [ "graphical-session.target" ];
     };
   };
@@ -212,8 +230,8 @@ in
     EOF
   '';
 
-  # Modern cursor (the default is the chunky X11 fallback). Also exported to
-  # the labwc environment below so the compositor itself uses it.
+  # Modern cursor (the default is the chunky X11 fallback). sway also picks it
+  # up via `seat seat0 xcursor_theme Bibata-Modern-Ice` in config/sway/config.
   home.pointerCursor = {
     enable = true;
     gtk.enable = true;
@@ -250,7 +268,7 @@ in
     "fastfetch/config.jsonc".source = "${configDir}/fastfetch/config.jsonc";
     "fastfetch/logo.png".source = "${configDir}/fastfetch/logo.png";
 
-    # waybar (adapted for labwc: wlr modules, NixOS paths)
+    # waybar (wlr modules, NixOS paths)
     "waybar/config".source = "${configDir}/waybar/config";
     "waybar/style.css".source = "${configDir}/waybar/style.css";
 
@@ -269,24 +287,21 @@ in
     # this picks ghostty as that terminal.
     "xdg-terminals.list".text = "com.mitchellh.ghostty.desktop\n";
 
-    # labwc compositor
-    "labwc/rc.xml".source = "${configDir}/labwc/rc.xml";
-    "labwc/menu.xml".source = "${configDir}/labwc/menu.xml";
-    "labwc/themerc-override".source = "${configDir}/labwc/themerc-override";
-    "labwc/wallpaper.png".source = "${configDir}/wallpaper/wallpaper.png";
-    "labwc/labwc-screenshot.sh" = {
-      source = "${configDir}/labwc/labwc-screenshot.sh";
+    # sway compositor
+    "sway/config".source = "${configDir}/sway/config";
+    "sway/wallpaper.png".source = "${configDir}/wallpaper/wallpaper.png";
+    "sway/sway-screenshot.sh" = {
+      source = "${configDir}/sway/sway-screenshot.sh";
       executable = true;
     };
-    "labwc/autostart".source = autostart;
+    "sway/cycle-workspace.sh" = {
+      source = "${configDir}/sway/cycle-workspace.sh";
+      executable = true;
+    };
+    "sway/autostart".source = autostart;
 
     # neovim (flake input -> github.com/krisfur/neovim-config)
     "nvim/init.lua".source = "${inputs.neovim-config}/init.lua";
-
-    # (No touchpad swipe-to-switch-desktop: labwc's libinput 3-finger-drag
-    # grabs the focused window on a fast 3-finger swipe and threeFingerDrag=no
-    # isn't honored to disable it, so the window rode along to the new desktop.
-    # Desktops are switched with the keyboard instead - Ctrl+Alt+Left/Right.)
   };
 
   # EasyEffects output preset (from sebastian-de/easyeffects-thinkpad-unsuck).
@@ -297,10 +312,7 @@ in
   xdg.dataFile."easyeffects/output/thinkpad-unsuck.json".source =
     "${configDir}/easyeffects/thinkpad-unsuck.json";
 
-  # Environment for the labwc session (labwc reads ~/.config/labwc/environment).
-  home.file.".config/labwc/environment".text = ''
-    XKB_DEFAULT_LAYOUT=gb
-    XCURSOR_THEME=Bibata-Modern-Ice
-    XCURSOR_SIZE=24
-  '';
+  # The labwc-era environment file is gone: sway sets the keyboard layout via
+  # `input type:keyboard { xkb_layout gb }` and the cursor via
+  # `seat seat0 xcursor_theme` in config/sway/config.
 }

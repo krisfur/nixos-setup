@@ -1,22 +1,22 @@
 { pkgs, ... }:
 
 let
-  # Session command run by greetd. Sets the bits labwc and portals expect,
+  # Session command run by greetd. Sets the bits sway and portals expect,
   # then execs the compositor.
-  labwcSession = pkgs.writeShellScript "labwc-session" ''
-    export XDG_CURRENT_DESKTOP=labwc:wlroots
+  swaySession = pkgs.writeShellScript "sway-session" ''
+    export XDG_CURRENT_DESKTOP=sway
     export XDG_SESSION_TYPE=wayland
     export NIXOS_OZONE_WL=1
     export MOZ_ENABLE_WAYLAND=1
     export QT_QPA_PLATFORM=wayland
     export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
-    exec ${pkgs.labwc}/bin/labwc
+    exec ${pkgs.sway}/bin/sway
   '';
 in
 {
-  # Wayland stacking compositor.
+  # Wayland tiling compositor.
   environment.systemPackages = with pkgs; [
-    labwc
+    sway
     waybar
     fuzzel
     swaynotificationcenter
@@ -38,11 +38,11 @@ in
     papirus-icon-theme
   ];
 
-  # Login: greetd + tuigreet, launching labwc.
+  # Login: greetd + tuigreet, launching sway.
   services.greetd = {
     enable = true;
     settings.default_session = {
-      command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd ${labwcSession}";
+      command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd ${swaySession}";
       user = "greeter";
     };
   };

@@ -4,16 +4,14 @@
     "height": 36,
     "spacing": 4,
 
-    "modules-left": ["ext/workspaces"],
+    "modules-left": ["sway/workspaces"],
     "modules-center": ["clock"],
     "modules-right": ["tray", "bluetooth", "group/hardware", "pulseaudio", "custom/power-profile", "battery", "custom/notification", "custom/power"],
 
-    "ext/workspaces": {
+    "sway/workspaces": {
         "format": "{icon}",
-        "on-click": "activate",
-        "sort-by-id": true,
         "format-icons": {
-            "active": "󰮯",
+            "focused": "󰮯",
             "default": "󰊠"
         }
     },

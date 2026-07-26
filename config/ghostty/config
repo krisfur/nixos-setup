@@ -31,15 +31,15 @@ cursor-text = #2e3440
 selection-background = #3e4a5b
 selection-foreground = #cdcecf
 
-# Slight translucency for an ephemeral feel. labwc has no compositor blur,
+# Slight translucency for an ephemeral feel. sway has no compositor blur,
 # so this is plain alpha over whatever is behind the window.
 background-opacity = 0.93
 
 window-width = 110
 window-height = 32
 
-# No client-side decorations. ghostty defaults to `auto`, which (with labwc
-# forcing CSD via serverDecoration="no") makes libadwaita draw a thin CSD edge
-# that only shows up in the *tiled* state - the stray dashed line at the top
-# when snapping with Meta+Up/Down. `none` removes that surface entirely.
+# No client-side decorations: sway draws its own pixel border (the focus
+# indicator), so ghostty's own CSD edge would just be a redundant surface.
+# `none` removes it; ghostty's default `auto` otherwise draws a thin libadwaita
+# edge that showed as a stray line in the tiled state.
 window-decoration = none

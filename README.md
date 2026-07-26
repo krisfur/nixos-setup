@@ -1,6 +1,6 @@
 # nixos-setup
 
-Declarative NixOS config: labwc (stacking Wayland WM), Nord theme, Waybar, greetd login, and a Nix-managed dev toolchain (latest GCC for C++26, latest kernel). 
+Declarative NixOS config: sway (tiling Wayland WM), Nord theme, Waybar, greetd login, and a Nix-managed dev toolchain (latest GCC for C++26, latest kernel). 
 
 Neovim config is pinned as a flake input, shared with non-nix machines machines.
 
@@ -112,6 +112,13 @@ sudo nixos-rebuild switch --flake '/etc/nixos-setup#nixos'
 
 Commit the changed `flake.lock` afterward so the new versions are pinned/shared. 
 
+`claude-code` is the exception: it's not in Nix (the read-only store breaks its
+self-updater and nixpkgs trails upstream). A wrapper in `modules/home/home.nix`
+(same pattern as the Helium browser) installs the latest release into pnpm's
+writable global prefix on first launch, and Claude self-updates in place after
+that — nothing to run by hand, and `sudo nixos-rebuild switch` remains the only
+command you invoke.
+
 To reclaim disk from old generations:
 
 ```bash
@@ -186,6 +193,6 @@ flake.nix                      inputs, nixosConfiguration
 hosts/nixos/                   host config + (placeholder) hardware-configuration.nix
 modules/system/                core, desktop, dev, packages
 modules/home/home.nix          home-manager: theming, git, vendored dotfiles
-config/                        vendored dotfiles (labwc, waybar, fuzzel, fastfetch, ...)
+config/                        vendored dotfiles (sway, waybar, fuzzel, fastfetch, ...)
                                (neovim config comes from the neovim-config flake input)
 ```

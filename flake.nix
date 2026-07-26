@@ -1,5 +1,5 @@
 {
-  description = "Declarative NixOS setup: labwc desktop, Nord theme, Nix-managed dev tooling";
+  description = "Declarative NixOS setup: sway desktop, Nord theme, Nix-managed dev tooling";
 
   inputs = {
     # Unstable tracks the latest kernel, GCC, and tooling we want.
