@@ -94,11 +94,11 @@ fprintd-verify        # confirm it reads back
 
 Check yours is on that list first — `lsusb` shows the vendor:product ID (Synaptics readers are vendor `06cb`). On machines without a reader, skip this: `fprintd-enroll` just reports no devices and nothing else is affected.
 
-This covers `sudo` and `swaylock`. On the lock screen, press Enter on an *empty* password to hand over to the sensor; typing your password normally still unlocks instantly.
+This covers `sudo` and the lock screen. On the lock screen just touch the sensor — hyprlock waits on the fingerprint and the password at the same time, so either unlocks, whichever you do first.
 
 Console login and the greeter are deliberately left password-only — fprintd isn't reliably running that early in boot, and a greeter hanging on the sensor is a bad way to lose access.
 
-One non-obvious bit in `modules/system/desktop.nix`: swaylock reorders `pam_fprintd` to run *after* `pam_unix` (`rules.auth.fprintd.order`). NixOS stacks it first by default, and because swaylock collects the password before running the PAM stack, that makes it block on the sensor for its full retry count before it even checks what you typed — slower than having no fingerprint at all.
+The lock screen is **hyprlock**, not swaylock, specifically for this. swaylock collects the password *before* running the PAM stack, so it can only check one method at a time: with `pam_fprintd` stacked first it blocks on the sensor before reading what you typed, and stacked last it's never reached unless you deliberately fail a password. hyprlock talks to fprintd over D-Bus directly, which is why `security.pam.services.hyprlock.fprintAuth` is *off* — leaving `pam_fprintd` in its stack as well makes both paths fight over the sensor.
 
 Enrolment is per-user and stored outside the store in `/var/lib/fprint`, so it's one of the few steps that can't be declarative — repeat it on each machine.
 

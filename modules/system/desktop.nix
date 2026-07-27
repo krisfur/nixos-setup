@@ -20,7 +20,6 @@ in
     waybar
     fuzzel
     swaynotificationcenter
-    swaylock-effects
     swayidle
     swaybg
     grim
@@ -69,12 +68,8 @@ in
     };
   };
 
-  # swaylock authenticates via a PAM service of the same name. Without this
-  # stack PAM denies by default and the lock screen becomes unbreakable.
-  security.pam.services.swaylock = { };
-
   # Fingerprint reader. Enabling fprintd defaults fprintAuth to true for sudo,
-  # login, greetd and swaylock at once. The login paths are turned back off:
+  # login, greetd and hyprlock at once. The login paths are turned back off:
   # fprintd isn't reliably up that early in boot, and a greeter hanging on the
   # sensor is a bad way to lose access. Enrol per-user with `fprintd-enroll`;
   # templates live in /var/lib/fprint, so that step can't be declarative.
@@ -82,20 +77,11 @@ in
   security.pam.services.greetd.fprintAuth = false;
   security.pam.services.login.fprintAuth = false;
 
-  # swaylock collects the password before running the PAM stack, and pam_fprintd
-  # defaults to order 11400 — ahead of pam_unix at 11700. Left alone it blocks
-  # on the sensor for its full retry count before it even looks at what you
-  # typed, which is slower than no fingerprint at all. Ordering it after unix
-  # gives both paths: a typed password succeeds immediately, and Enter on an
-  # empty password falls through to the sensor.
-  security.pam.services.swaylock.rules.auth.fprintd.order = 11750;
-
-  # TRIAL, alongside the hyprlock package in packages.nix. Without its own PAM
-  # service, PAM falls back to /etc/pam.d/other — warn + deny — and the locker
-  # rejects every password, which means a locked-out session. fprintAuth is off
-  # because hyprlock drives fprintd directly over D-Bus for its parallel
-  # password+fingerprint auth; leaving pam_fprintd in the stack as well makes
-  # both paths fight over the sensor.
+  # The lock screen needs its own PAM service or PAM falls back to
+  # /etc/pam.d/other — warn + deny — and rejects every password, locking you
+  # out of the session. fprintAuth is off here because hyprlock drives fprintd
+  # directly over D-Bus for its parallel password+fingerprint auth; leaving
+  # pam_fprintd in the stack too makes both paths fight over the sensor.
   security.pam.services.hyprlock = {
     fprintAuth = false;
   };

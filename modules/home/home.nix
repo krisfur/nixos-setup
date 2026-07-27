@@ -3,7 +3,20 @@
 let
   configDir = ../../config;
   wallpaper = "${config.xdg.configHome}/sway/wallpaper.png";
-  lockCmd = "${pkgs.swaylock-effects}/bin/swaylock -f -i ${wallpaper} --effect-blur 7x5 --config ${config.xdg.configHome}/swaylock/config";
+  # hyprlock rather than swaylock: it waits on the password and the fingerprint
+  # sensor concurrently, which swaylock structurally can't (it collects input
+  # first, then runs PAM). Appearance comes from hypr/hyprlock.conf below.
+  lockCmd = "${pkgs.hyprlock}/bin/hyprlock --grace 0 --no-fade-in";
+
+  # before-sleep needs a command that *returns*, because swayidle holds the
+  # sleep inhibitor until it exits — and hyprlock has no -f/daemonize flag, so
+  # running it directly would block suspend until unlocked. Background it and
+  # settle briefly so it takes the ext-session-lock before the machine goes
+  # down; otherwise suspend can win the race and flash the desktop on resume.
+  sleepLockCmd = pkgs.writeShellScript "sleep-lock" ''
+    ${lockCmd} &
+    sleep 1
+  '';
 
   # Controller input never reaches the compositor's seat, so swayidle counts a
   # gamepad session as idle and locks mid-game. Steam's "reaper SteamLaunch
@@ -47,7 +60,7 @@ let
     ${pkgs.swayidle}/bin/swayidle -w \
       timeout 900 '${idleLockCmd}' \
       timeout 1800 '${idleSuspendCmd}' \
-      before-sleep '${lockCmd}' &
+      before-sleep '${sleepLockCmd}' &
   '';
 
   # Helium browser. Not in nixpkgs; it's an auto-updating AppImage. The wrapper
@@ -280,15 +293,11 @@ in
     # fuzzel launcher
     "fuzzel/fuzzel.ini".source = "${configDir}/fuzzel/fuzzel.ini";
 
-    # notifications + lockscreen
+    # notifications
     "swaync/style.css".source = "${configDir}/swaync/style.css";
-    "swaylock/config".source = "${configDir}/swaylock/config";
 
-    # hyprlock TRIAL (see the package in packages.nix and the PAM service in
-    # desktop.nix). The draw over swaylock is auth:fingerprint, which waits on
-    # the password and the sensor concurrently instead of serially. Generated
-    # rather than vendored so the wallpaper path resolves. Not yet wired into
-    # swayidle or lockCmd — run `hyprlock` by hand to test.
+    # Lock screen. Generated rather than vendored so the wallpaper path
+    # resolves. auth:fingerprint needs the PAM service in desktop.nix.
     "hypr/hyprlock.conf".text = ''
       background {
           monitor =

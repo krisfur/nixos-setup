@@ -11,7 +11,7 @@ set $terminal ghostty --gtk-single-instance=false
 set $fileManager thunar
 set $menu fuzzel
 set $browser helium
-set $lockcmd swaylock -f -i ~/.config/sway/wallpaper.png --effect-blur 7x5 --config ~/.config/swaylock/config
+set $lockcmd hyprlock --grace 0 --no-fade-in
 
 output * scale 1
 

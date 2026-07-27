@@ -25,10 +25,7 @@
     xdg-terminal-exec
     networkmanagerapplet # nm-applet tray + nm-connection-editor (replaces nmtui)
     iw                 # wifi diagnostics: `iw reg get`, `iw phy` channel/band list
-    # TRIAL: candidate swaylock replacement — it's the only locker with
-    # parallel password+fingerprint auth. Not wired into swayidle or the lock
-    # command yet; remove this line if it doesn't work out on sway.
-    hyprlock
+    hyprlock           # lock screen (parallel password + fingerprint auth)
     discord            # chat
     mpv                # video
     ffmpeg             # video/audio transcoding CLI
