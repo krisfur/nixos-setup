@@ -166,8 +166,23 @@ in
     # `*` has zero specificity, so any real selector beats it. Colour is Nord
     # frost #88c0d0, matching the sway focus border. GTK4 only — the GTK3 sheet
     # has no such rule and GTK3 has no :focus-visible anyway.
+    #
+    # Scoped to actual controls on purpose. A bare `:focus-visible` also matches
+    # the toplevel and ghostty's terminal widget, which fills the window — that
+    # drew a 2px ring in the same colour as the sway border just inside it, so
+    # the window looked like it randomly grew a thicker border while typing
+    # (`:focus-visible` is keyboard-only, hence the intermittence).
     gtk4.extraCss = ''
-      :focus-visible {
+      button:focus-visible,
+      entry:focus-visible,
+      spinbutton:focus-visible,
+      checkbutton:focus-visible,
+      radiobutton:focus-visible,
+      switch:focus-visible,
+      combobox:focus-visible,
+      dropdown:focus-visible,
+      tab:focus-visible,
+      row:focus-visible {
         outline-color: #88c0d0;
         outline-style: solid;
         outline-width: 2px;
