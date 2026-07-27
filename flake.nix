@@ -10,10 +10,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Neovim config, shared with non-NixOS machines. Pinned here as a plain
-    # source (flake = false) instead of a git submodule, so it's reproducible
-    # via flake.lock and needs no ?submodules=1. Update with:
-    #   nix flake update neovim-config
+    # Neovim config, shared with non-NixOS machines. A plain source rather than
+    # a git submodule, so it needs no ?submodules=1.
+    # Update with: nix flake update neovim-config
     neovim-config = {
       url = "github:krisfur/neovim-config";
       flake = false;

@@ -6,18 +6,16 @@ let
   lockCmd = "${pkgs.swaylock-effects}/bin/swaylock -f -i ${wallpaper} --effect-blur 7x5 --config ${config.xdg.configHome}/swaylock/config";
 
   # Controller input never reaches the compositor's seat, so swayidle counts a
-  # gamepad session as idle and locks mid-game. Steam wraps every game launch
-  # (native and Proton) in a "reaper SteamLaunch AppId=..." process that lives
-  # for exactly the game's lifetime, so skip the idle lock while one exists.
-  # Note: after the game exits the timer only re-arms on the next input event.
+  # gamepad session as idle and locks mid-game. Steam's "reaper SteamLaunch
+  # AppId=..." process lives exactly as long as the game, so skip while it
+  # exists. The timer only re-arms on the next input event after a game exits.
   idleLockCmd = pkgs.writeShellScript "idle-lock" ''
     ${pkgs.procps}/bin/pgrep -f 'SteamLaunch AppId=' >/dev/null && exit 0
     exec ${lockCmd}
   '';
 
-  # Suspend after 30 minutes idle (same suspend as closing the lid), with the
-  # same skip-while-gaming guard as the lock. Media playback holds the
-  # Wayland idle inhibitor, which already blocks all swayidle timeouts.
+  # Suspend after 30 min idle, with the same skip-while-gaming guard. Media
+  # playback holds the Wayland idle inhibitor, which blocks swayidle already.
   idleSuspendCmd = pkgs.writeShellScript "idle-suspend" ''
     ${pkgs.procps}/bin/pgrep -f 'SteamLaunch AppId=' >/dev/null && exit 0
     exec ${pkgs.systemd}/bin/systemctl suspend
@@ -26,30 +24,24 @@ let
   # sway execs ~/.config/sway/autostart (see the `exec` line in the sway config).
   # We generate it here so the helper binaries resolve to their Nix store paths.
   autostart = pkgs.writeShellScript "sway-autostart" ''
-    # pam_gnome_keyring unlocks a keyring daemon at login, but D-Bus sometimes
-    # activates a second, *locked* secrets daemon before the unlocked one claims
-    # the bus name - the intermittent keyring prompt after a rebuild+reboot.
-    # Re-run --start here, inside the session, to adopt the already-unlocked
-    # daemon and make it own org.freedesktop.secrets on the session bus before
-    # any app (Helium) asks, pre-empting the locked instance. Run synchronously
-    # so the name is claimed before the apps below launch.
+    # D-Bus sometimes activates a second, *locked* secrets daemon before the
+    # one pam_gnome_keyring unlocked claims the bus name — the intermittent
+    # keyring prompt after a rebuild+reboot. Re-run --start synchronously to
+    # adopt the unlocked daemon and claim org.freedesktop.secrets first.
     eval "$(${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --start --components=secrets,ssh,pkcs11)"
     export SSH_AUTH_SOCK
     ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd \
       SSH_AUTH_SOCK GNOME_KEYRING_CONTROL DISPLAY WAYLAND_DISPLAY 2>/dev/null || true
 
-    # Tell systemd a graphical session is up so user units wanted by
-    # graphical-session.target (easyeffects) start. That target refuses
-    # manual starts, so go through sway-session.target, which BindsTo it.
-    # Must run after the env push above so those units see WAYLAND_DISPLAY.
+    # Starts user units wanted by graphical-session.target (easyeffects). That
+    # target refuses manual starts, hence sway-session.target which BindsTo it.
+    # Must run after the env push so those units see WAYLAND_DISPLAY.
     ${pkgs.systemd}/bin/systemctl --user start sway-session.target
 
     ${pkgs.swaybg}/bin/swaybg -i ${wallpaper} -m fill &
     ${pkgs.waybar}/bin/waybar &
-    # swaync is NOT launched here: its package ships a user unit wired to
-    # graphical-session.target, so the systemctl line above starts it. A
-    # second manual launch here loses the bus-name race and leaves a failed
-    # swaync.service unit behind.
+    # swaync is deliberately absent: its own user unit is started by the
+    # systemctl line above, and a second launch loses the bus-name race.
     ${pkgs.networkmanagerapplet}/bin/nm-applet --indicator &
     ${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1 &
     ${pkgs.swayidle}/bin/swayidle -w \
@@ -73,30 +65,22 @@ let
       ${pkgs.curl}/bin/curl -fL "$url" -o "$app"
       chmod +x "$app"
     fi
-    # Hardware video decode (VA-API): Chromium ships with it disabled on
-    # Linux, so YouTube burns CPU software-decoding VP9/AV1 (~3-5W extra).
-    # The feature flag was renamed around Chromium 131; pass old and new
-    # names, unknown ones are ignored. The libva library itself is baked
-    # into the appimage-run sandbox (see modules/system/packages.nix) —
-    # env vars don't reliably survive into the AppImage. Success check:
-    # about:gpu's "Video Acceleration Information" lists decode profiles
-    # (an empty section means CPU decode despite "Hardware accelerated"
-    # in the feature list above it).
+    # Hardware video decode (VA-API): Chromium disables it on Linux, costing
+    # ~3-5 W software-decoding VP9/AV1. The flag was renamed around Chromium
+    # 131, so pass both names — unknown ones are ignored. libva is baked into
+    # the appimage-run sandbox (packages.nix); env vars don't survive AppRun.
+    # Verify in about:gpu → "Video Acceleration Information": empty means CPU
+    # decode, regardless of what the feature list above it claims.
     exec "$app" \
       --enable-features=AcceleratedVideoDecodeLinuxGL,AcceleratedVideoDecodeLinuxZeroCopyGL,VaapiVideoDecodeLinuxGL,VaapiIgnoreDriverChecks \
       "$@"
   '';
 
   # Claude Code. Not from nixpkgs: the read-only store breaks its self-updater
-  # (`claude update` prints success and no-ops) and nixpkgs trails upstream.
-  # pnpm's global prefix can't work either — on NixOS pnpm resolves it relative
-  # to the store binary and hits EROFS. So, like Helium above, a wrapper runs
-  # Anthropic's official installer on first launch. That drops a self-updating
-  # native ELF into ~/.local/bin (writable, so `claude update` genuinely works
-  # and it auto-updates thereafter) — decoupled from nixos-rebuild, always
-  # latest. The binary is dynamically linked; nix-ld (dev.nix) provides its
-  # loader. Nothing to run by hand. The installer touches no shell rc files;
-  # the tools it needs are pinned onto PATH here rather than assumed present.
+  # and pnpm's global prefix hits EROFS. This wrapper runs Anthropic's official
+  # installer on first launch, dropping a self-updating native ELF into
+  # ~/.local/bin so `claude update` works. Dynamically linked — nix-ld (dev.nix)
+  # provides its loader. PATH is pinned rather than assumed.
   claude = pkgs.writeShellScriptBin "claude" ''
     set -euo pipefail
     bin="$HOME/.local/bin/claude"
@@ -136,10 +120,9 @@ in
   };
 
   # Ghostty single-instance mode segfaults when closing one of several windows
-  # sharing the process, killing them all (ghostty-org/ghostty#5868). Force it
-  # off at every launch point: this override (shadows the stock desktop entry,
-  # keeping its X-TerminalArg* keys for xdg-terminal-exec below), the sway
-  # config, waybar on-clicks, and fuzzel.ini.
+  # sharing the process, killing them all (ghostty-org/ghostty#5868). Forced
+  # off at every launch point: here, the sway config, waybar, and fuzzel.ini.
+  # This entry shadows the stock one, keeping its X-TerminalArg* keys.
   xdg.desktopEntries."com.mitchellh.ghostty" = {
     name = "Ghostty";
     genericName = "Terminal Emulator";
@@ -163,22 +146,16 @@ in
       name = "Nordic";
       package = pkgs.nordic;
     };
-    # Keep applying Nordic to GTK4 too (the old setup themed gtk-4.0). Use
-    # `null` here instead if you'd rather let libadwaita apps render natively.
-    # (GTK4 ignores gtk-theme-name, so home-manager makes this work by writing
-    # a ~/.config/gtk-4.0/gtk.css that @imports the theme - which libadwaita
-    # apps like ghostty do read. gtk4.extraCss below is appended after that
-    # import, so it overrides the theme.)
+    # Set to `null` to let libadwaita apps render natively instead. GTK4
+    # ignores gtk-theme-name, so home-manager writes a gtk.css that @imports
+    # the theme; extraCss below is appended after, so it wins.
     gtk4.theme = config.gtk.theme;
 
-    # Restore keyboard focus rings. Nordic's GTK4 stylesheet sets a *universal*
-    # `* { outline-width: 0px; }`, which makes every focus ring zero-width in
-    # every GTK4/libadwaita app: dialogs (e.g. ghostty's confirm-close prompt
-    # on Super+W) gave no hint which of Cancel/Close was keyboard-selected, only
-    # hover highlighted anything. `*` has zero specificity, so any real selector
-    # beats it. Ring color is Nord frost #88c0d0, matching the sway focus border.
-    # GTK4 only: Nordic's GTK3 sheet has no such rule (its ring is faint but
-    # present), and GTK3 has no :focus-visible to key off.
+    # Restore keyboard focus rings: Nordic's GTK4 sheet sets a universal
+    # `* { outline-width: 0px; }`, leaving dialogs with no visible selection.
+    # `*` has zero specificity, so any real selector beats it. Colour is Nord
+    # frost #88c0d0, matching the sway focus border. GTK4 only — the GTK3 sheet
+    # has no such rule and GTK3 has no :focus-visible anyway.
     gtk4.extraCss = ''
       :focus-visible {
         outline-color: #88c0d0;
@@ -204,21 +181,17 @@ in
   dconf.settings."org/gnome/desktop/interface".color-scheme = "prefer-dark";
 
   # Speaker DSP: the P14s speakers are tuned for Windows' Dolby driver and
-  # sound tinny without it. EasyEffects runs as a background service and
-  # applies a community ThinkPad EQ preset (bass enhancer + multiband
-  # compressor). Its output is pinned to the internal speaker sink (see the
-  # activation script below), so headphones, DACs, and any other output play
-  # untouched — no per-device presets needed.
+  # sound tinny without it, so apply a community ThinkPad EQ preset. Pinned to
+  # the internal speaker sink below, so headphones and DACs play untouched.
   services.easyeffects = {
     enable = true;
     preset = "thinkpad-unsuck";
   };
 
-  # EasyEffects silently ignores --load-preset on its own service start (the
-  # flag is handled before the pipeline is ready), so a fresh boot came up
-  # with an empty effects chain. Re-issue the load over IPC once the instance
-  # is up, and verify against PipeWire itself: the preset's effect nodes
-  # (ee_soe_*) only exist when the chain is actually populated.
+  # EasyEffects ignores --load-preset on its own service start (handled before
+  # the pipeline is ready), leaving an empty chain. Re-issue over IPC once it's
+  # up and verify via PipeWire: ee_soe_* nodes exist only when the chain is
+  # actually populated.
   systemd.user.services.easyeffects.Service.ExecStartPost =
     "${pkgs.writeShellScript "easyeffects-load-preset" ''
       sleep 2
@@ -231,9 +204,8 @@ in
       exit 1
     ''}";
 
-  # Session marker started by sway's autostart (see above). sway itself never
-  # activates graphical-session.target, and that target refuses manual starts —
-  # the supported pattern is a session-scoped target bound to it.
+  # sway never activates graphical-session.target and that target refuses
+  # manual starts, so bind a session-scoped one to it (started by autostart).
   systemd.user.targets.sway-session = {
     Unit = {
       Description = "sway compositor session";
@@ -241,11 +213,9 @@ in
     };
   };
 
-  # EasyEffects 8 stores settings in a KConfig file it rewrites at runtime, so
-  # the speaker pin can't be a read-only store symlink like the configs below.
-  # Instead, enforce the two [StreamOutputs] keys on every activation:
-  # useDefaultOutputDevice=false stops EasyEffects from following the default
-  # sink, and outputDevice fixes it to the internal speakers.
+  # EasyEffects 8 rewrites its KConfig at runtime, so the speaker pin can't be
+  # a read-only store symlink. Enforce the two keys on every activation:
+  # useDefaultOutputDevice=false stops it following the default sink.
   home.activation.easyeffectsPinSpeakers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run ${pkgs.python3}/bin/python3 - "${config.xdg.configHome}/easyeffects/db/easyeffectsrc" <<'EOF'
     import configparser, os, sys
@@ -285,9 +255,8 @@ in
       user.name = "Krzysztof Furman";
       user.email = "krisfur@proton.me";
       init.defaultBranch = "main";
-      # Use the gh CLI's token for HTTPS GitHub git operations (push/pull),
-      # the declarative equivalent of `gh auth setup-git`. Scoped to GitHub so
-      # gh isn't invoked for other remotes. Requires a successful `gh auth login`.
+      # Declarative `gh auth setup-git`. Scoped to GitHub so gh isn't invoked
+      # for other remotes. Requires a successful `gh auth login`.
       credential = {
         "https://github.com".helper = "!${pkgs.gh}/bin/gh auth git-credential";
         "https://gist.github.com".helper = "!${pkgs.gh}/bin/gh auth git-credential";
@@ -315,9 +284,8 @@ in
     "swaync/style.css".source = "${configDir}/swaync/style.css";
     "swaylock/config".source = "${configDir}/swaylock/config";
 
-    # xdg-terminal-exec (packages.nix): glib consults it to launch
-    # Terminal=true desktop entries (e.g. "Open With Neovim wrapper");
-    # this picks ghostty as that terminal.
+    # Picks ghostty as the terminal for Terminal=true desktop entries, via
+    # xdg-terminal-exec (packages.nix).
     "xdg-terminals.list".text = "com.mitchellh.ghostty.desktop\n";
 
     # sway compositor
@@ -337,15 +305,9 @@ in
     "nvim/init.lua".source = "${inputs.neovim-config}/init.lua";
   };
 
-  # EasyEffects output preset (from sebastian-de/easyeffects-thinkpad-unsuck).
-  # EasyEffects 8 reads user presets from XDG data, not XDG config — it
-  # actively migrates (moves) anything found under ~/.config/easyeffects to
-  # ~/.local/share/easyeffects at startup, so the link must live here or EE
-  # will fight home-manager over it.
+  # Preset from sebastian-de/easyeffects-thinkpad-unsuck. Must live in XDG
+  # data, not config: EasyEffects 8 moves anything under ~/.config/easyeffects
+  # to ~/.local/share/easyeffects at startup and would fight home-manager.
   xdg.dataFile."easyeffects/output/thinkpad-unsuck.json".source =
     "${configDir}/easyeffects/thinkpad-unsuck.json";
-
-  # The labwc-era environment file is gone: sway sets the keyboard layout via
-  # `input type:keyboard { xkb_layout gb }` and the cursor via
-  # `seat seat0 xcursor_theme` in config/sway/config.
 }

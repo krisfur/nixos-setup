@@ -1,18 +1,17 @@
 { pkgs, ... }:
 
-# Development tooling, moved off `mise` onto Nix, installed system-wide.
-# The old `cargo:fex` tool is dropped: Nix handles flakes/binaries natively.
+# Development tooling, installed system-wide.
 
 {
   environment.systemPackages = with pkgs; [
     # GCC 16.1 for C++26 work (reflection / P2996 needs >= 16).
     gcc16
-    # clangd / clang-format / clang-tidy for editor LSP. (The clang *compiler*
-    # is not installed system-wide: it ships bin/cc + bin/c++ and would collide
-    # with gcc16. Get it from a dev shell if you need an alternate toolchain.)
+    # clangd / clang-format / clang-tidy for editor LSP. The clang *compiler*
+    # is omitted: it ships bin/cc + bin/c++ and would collide with gcc16. Use
+    # a dev shell if you need an alternate toolchain.
     clang-tools
 
-    # C/C++ build stack (replaces the mise cmake/ninja entries).
+    # C/C++ build stack.
     cmake
     ninja
     gnumake
@@ -34,7 +33,7 @@
     (python3.withPackages (ps: [ ps.pip ]))
     uv
 
-    # Editor + CLI tooling (mirrors the mise list, minus fex).
+    # Editor + CLI tooling.
     neovim
     tree-sitter
     ripgrep
@@ -46,18 +45,12 @@
     lazygit
     jq
     cloc
-    # claude-code is NOT installed from nixpkgs: the store is read-only, so its
-    # built-in `claude update` can never replace the binary (it prints success
-    # and does nothing), and nixpkgs trails upstream releases by hours-days. It's
-    # provided instead by a self-installing wrapper in modules/home/home.nix that
-    # runs Anthropic's official installer on first launch (native self-updating
-    # binary under ~/.local/bin, run via nix-ld below). pnpm is NOT used for it —
-    # pnpm's global prefix hits a read-only-store EROFS on NixOS.
+    # claude-code is deliberately not from nixpkgs — see the wrapper in
+    # modules/home/home.nix for why.
 
-    # Neovim language servers + formatters. The nvim config no longer uses
-    # Mason: every server in its `servers` table and every conform formatter
-    # must be on PATH (it shells out by command name). clangd comes from
-    # clang-tools, rust-analyzer/zls are above; the rest are here.
+    # Neovim language servers + formatters. The nvim config doesn't use Mason,
+    # so every server and conform formatter must be on PATH (it shells out by
+    # command name). clangd comes from clang-tools, rust-analyzer/zls above.
     gopls                          # go
     lua-language-server            # lua  (lua_ls)
     ols                            # odin
@@ -74,20 +67,18 @@
     # Wayland clipboard for neovim (the nvim config expects wl-clipboard).
     wl-clipboard
 
-    # Some neovim plugins build native bits on first run: telescope-fzf-native
-    # (make), treesitter parsers (cc), markdown-preview (npm). gnumake/gcc16/
-    # nodejs above cover those; unzip is kept as a generally-useful extractor.
+    # Neovim plugins that build native bits on first run (telescope-fzf-native,
+    # treesitter parsers, markdown-preview) are covered by gnumake/gcc16/nodejs
+    # above; unzip is a generally-useful extractor.
     unzip
   ];
 
-  # Escape hatch for running dynamically-linked foreign binaries (no
-  # /lib64/ld-linux-*.so on NixOS). Not needed by the Nix-provided LSPs, but
-  # handy for ad-hoc prebuilt tools (e.g. pip wheels shipping binaries).
+  # Escape hatch for dynamically-linked foreign binaries (no /lib64/ld-linux-*
+  # on NixOS). Unused by the Nix-provided LSPs; needed by ad-hoc prebuilt tools.
   programs.nix-ld.enable = true;
 
-  # Docker (the old sway setup enabled the daemon + added the user to docker).
-  # Socket-activated: the daemon only starts on first docker command instead
-  # of sitting in RAM from boot (~90 MiB idle).
+  # Socket-activated: the daemon starts on first docker command rather than
+  # sitting in RAM from boot (~90 MiB idle).
   virtualisation.docker.enable = true;
   virtualisation.docker.enableOnBoot = false;
 

@@ -57,8 +57,7 @@ in
     jack.enable = true;
   };
 
-  # Wayland portals: gtk default, wlr for screencast/screenshot (matches the
-  # old sway-portals.conf).
+  # Wayland portals: gtk default, wlr for screencast/screenshot.
   xdg.portal = {
     enable = true;
     wlr.enable = true;
@@ -70,17 +69,15 @@ in
     };
   };
 
-  # swaylock authenticates via a PAM service named "swaylock". Without this it
-  # can never verify your password (PAM denies by default), so the lock screen
-  # is unbreakable even with the correct password. This enables that PAM stack.
+  # swaylock authenticates via a PAM service of the same name. Without this
+  # stack PAM denies by default and the lock screen becomes unbreakable.
   security.pam.services.swaylock = { };
 
   # polkit + keyring + dconf for gsettings-driven theming.
   security.polkit.enable = true;
   services.gnome.gnome-keyring.enable = true;
-  # Auto-unlock the GNOME keyring with the login password (greetd is the login
-  # PAM service). Chromium/Helium store secrets here; without this the keyring
-  # stays locked and prompts on its own.
+  # Auto-unlock the keyring with the login password (greetd is the login PAM
+  # service). Chromium/Helium store secrets here and would prompt otherwise.
   security.pam.services.greetd.enableGnomeKeyring = true;
   programs.dconf.enable = true;
 
