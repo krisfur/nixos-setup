@@ -35,6 +35,18 @@
   # Networking.
   networking.networkmanager.enable = true;
   networking.firewall.enable = true;
+
+  # Wifi regulatory domain. ath11k fails its own country lookup at boot
+  # ("Failed to set the requested Country regulatory setting" / "failed to
+  # process regulatory info -22"), which leaves cfg80211 in the world domain
+  # (00) — the most conservative profile, with reduced TX power and 5 GHz
+  # channels restricted to passive scan. Pin GB explicitly. regulatory.db is
+  # already present via linux-firmware; wirelessRegulatoryDatabase just makes
+  # that dependency explicit instead of incidental.
+  hardware.wirelessRegulatoryDatabase = true;
+  boot.extraModprobeConfig = ''
+    options cfg80211 ieee80211_regdom=GB
+  '';
   # localsend (from the old Sway setup's ufw rules).
   networking.firewall.allowedTCPPorts = [ 53317 ];
   networking.firewall.allowedUDPPorts = [ 53317 ];
