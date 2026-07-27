@@ -328,7 +328,7 @@ in
 
       input-field {
           monitor =
-          size = 320, 50
+          size = 240, 50
           rounding = 12
           outline_thickness = 1
           inner_color = rgb(3b4252)
