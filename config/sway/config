@@ -4,10 +4,7 @@
 # helium wrapper, home-manager-owned theming).
 
 set $mod Mod4
-# ghostty gets --gtk-single-instance=false everywhere it is launched: its
-# default merges compositor spawns into one process, which segfaults all
-# windows when any one closes (ghostty-org/ghostty#5868).
-set $terminal ghostty --gtk-single-instance=false
+set $terminal ghostty
 set $fileManager thunar
 set $menu fuzzel
 set $browser helium
