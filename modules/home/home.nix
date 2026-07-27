@@ -329,7 +329,7 @@ in
       input-field {
           monitor =
           size = 320, 50
-          rounding = 8
+          rounding = 12
           outline_thickness = 1
           inner_color = rgb(3b4252)
           outer_color = rgb(4c566a)
@@ -340,7 +340,7 @@ in
           dots_size = 0.25
           dots_spacing = 0.3
           dots_rounding = -1
-          placeholder_text = <i>Password or fingerprint</i>
+          placeholder_text = 󰌆
           fail_text = <i>$FAIL</i>
           fade_on_empty = false
       }
@@ -348,8 +348,8 @@ in
       auth {
           fingerprint {
               enabled = true
-              ready_message = Touch the sensor
-              present_message = Scanning...
+              ready_message = 󰌆  󰈷
+              present_message = 󰈷
           }
       }
     '';
