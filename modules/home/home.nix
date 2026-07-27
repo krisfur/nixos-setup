@@ -328,7 +328,7 @@ in
 
       input-field {
           monitor =
-          size = 240, 50
+          size = 200, 50
           rounding = 12
           outline_thickness = 1
           inner_color = rgb(3b4252)
@@ -340,7 +340,7 @@ in
           dots_size = 0.25
           dots_spacing = 0.3
           dots_rounding = -1
-          placeholder_text = <span size="24pt">󰌾  󰈷 </span>
+          placeholder_text = <span size="24pt"> 󰌾  󰈷 </span>
           fail_text = <i>$FAIL</i>
           fade_on_empty = false
       }
@@ -348,8 +348,8 @@ in
       auth {
           fingerprint {
               enabled = true
-              ready_message = <span size="24pt">󰌾  󰈷 </span>
-              present_message = <span size="24pt">󰈷 </span>
+              ready_message = <span size="24pt"> 󰌾  󰈷 </span>
+              present_message = <span size="24pt"> 󰈷 </span>
           }
       }
     '';
