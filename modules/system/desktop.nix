@@ -10,6 +10,12 @@ let
     export MOZ_ENABLE_WAYLAND=1
     export QT_QPA_PLATFORM=wayland
     export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+    # GTK 4.22 defaults to the Vulkan renderer, which intermittently leaves a
+    # stale/undersized frame after a resize — ghostty then doesn't cover its
+    # surface and sway's focused child_border shows through, looking like a
+    # randomly thickened border. Geometry is provably fine (slack=2x2, bw=1),
+    # so this is a paint bug, not a layout one. ngl is GTK's OpenGL renderer.
+    export GSK_RENDERER=ngl
     exec ${pkgs.sway}/bin/sway
   '';
 in

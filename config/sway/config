@@ -137,5 +137,8 @@ bindswitch --locked lid:on exec $lockcmd
 # --- Floating rules for popup-style apps ---
 for_window [app_id="^(imv|mpv|org\.pulseaudio\.pavucontrol)$"] floating enable, resize set width 70 ppt height 70 ppt, move position center
 for_window [class="^(imv|mpv|org\.pulseaudio\.pavucontrol)$"] floating enable, resize set width 70 ppt height 70 ppt, move position center
-for_window [app_id="^com\.app\.(btop|gazelle|bluetuith)$"] floating enable, resize set width 50 ppt height 75 ppt, move position center
-for_window [class="^com\.app\.(btop|gazelle|bluetuith)$"] floating enable, resize set width 50 ppt height 75 ppt, move position center
+# Matched on title, not app_id: --class would change ghostty's GTK application
+# id, which is also its single-instance identity, so those launches couldn't
+# attach to the running process and paid a ~3.4s cold start instead of ~0.4s.
+# ghostty's `title` is fixed by the flag, so the app can't rename the window.
+for_window [app_id="^com\.mitchellh\.ghostty$" title="^(btop|bluetuith)$"] floating enable, resize set width 50 ppt height 75 ppt, move position center
