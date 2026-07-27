@@ -83,6 +83,21 @@ After reboot, log in as `kfurman` with password `changeme` and immediately chang
 passwd
 ```
 
+### Fingerprint reader (optional, hardware permitting)
+
+On machines with a reader supported by [libfprint](https://fprint.freedesktop.org/supported-devices.html), enrol a finger:
+
+```bash
+fprintd-enroll        # touch the sensor repeatedly until it completes
+fprintd-verify        # confirm it reads back
+```
+
+Check yours is on that list first — `lsusb` shows the vendor:product ID (Synaptics readers are vendor `06cb`). On machines without a reader, skip this: `fprintd-enroll` just reports no devices and nothing else is affected.
+
+This covers `sudo` and `swaylock`. For swaylock, press Enter on an *empty* password and then touch the sensor — it won't read the finger while it's waiting for typed input. Console login and the greetd greeter are deliberately left password-only, since fprintd isn't reliably running that early in boot.
+
+Enrolment is per-user and stored outside the store in `/var/lib/fprint`, so it's one of the few steps that can't be declarative — repeat it on each machine.
+
 ## Apply changes later
 
 The repo lives in root-owned `/etc`, so git runs need `sudo`:

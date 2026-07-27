@@ -73,6 +73,16 @@ in
   # stack PAM denies by default and the lock screen becomes unbreakable.
   security.pam.services.swaylock = { };
 
+  # Fingerprint reader. Enabling fprintd defaults fprintAuth to true for sudo,
+  # login, greetd and swaylock at once; keep sudo and swaylock but not the
+  # login paths — fprintd isn't reliably up that early in boot, and a greeter
+  # hanging on the sensor is a bad way to lose access. Enrol per-user with
+  # `fprintd-enroll`; templates live in /var/lib/fprint, so that step can't be
+  # declarative. swaylock needs Enter on an empty password before it reads.
+  services.fprintd.enable = true;
+  security.pam.services.greetd.fprintAuth = false;
+  security.pam.services.login.fprintAuth = false;
+
   # polkit + keyring + dconf for gsettings-driven theming.
   security.polkit.enable = true;
   services.gnome.gnome-keyring.enable = true;
