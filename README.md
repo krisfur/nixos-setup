@@ -94,7 +94,11 @@ fprintd-verify        # confirm it reads back
 
 Check yours is on that list first — `lsusb` shows the vendor:product ID (Synaptics readers are vendor `06cb`). On machines without a reader, skip this: `fprintd-enroll` just reports no devices and nothing else is affected.
 
-This covers `sudo` and `swaylock`. For swaylock, press Enter on an *empty* password and then touch the sensor — it won't read the finger while it's waiting for typed input. Console login and the greetd greeter are deliberately left password-only, since fprintd isn't reliably running that early in boot.
+This covers `sudo` and `swaylock`. On the lock screen, press Enter on an *empty* password to hand over to the sensor; typing your password normally still unlocks instantly.
+
+Console login and the greeter are deliberately left password-only — fprintd isn't reliably running that early in boot, and a greeter hanging on the sensor is a bad way to lose access.
+
+One non-obvious bit in `modules/system/desktop.nix`: swaylock reorders `pam_fprintd` to run *after* `pam_unix` (`rules.auth.fprintd.order`). NixOS stacks it first by default, and because swaylock collects the password before running the PAM stack, that makes it block on the sensor for its full retry count before it even checks what you typed — slower than having no fingerprint at all.
 
 Enrolment is per-user and stored outside the store in `/var/lib/fprint`, so it's one of the few steps that can't be declarative — repeat it on each machine.
 

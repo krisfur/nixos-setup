@@ -74,14 +74,21 @@ in
   security.pam.services.swaylock = { };
 
   # Fingerprint reader. Enabling fprintd defaults fprintAuth to true for sudo,
-  # login, greetd and swaylock at once; keep sudo and swaylock but not the
-  # login paths — fprintd isn't reliably up that early in boot, and a greeter
-  # hanging on the sensor is a bad way to lose access. Enrol per-user with
-  # `fprintd-enroll`; templates live in /var/lib/fprint, so that step can't be
-  # declarative. swaylock needs Enter on an empty password before it reads.
+  # login, greetd and swaylock at once. The login paths are turned back off:
+  # fprintd isn't reliably up that early in boot, and a greeter hanging on the
+  # sensor is a bad way to lose access. Enrol per-user with `fprintd-enroll`;
+  # templates live in /var/lib/fprint, so that step can't be declarative.
   services.fprintd.enable = true;
   security.pam.services.greetd.fprintAuth = false;
   security.pam.services.login.fprintAuth = false;
+
+  # swaylock collects the password before running the PAM stack, and pam_fprintd
+  # defaults to order 11400 — ahead of pam_unix at 11700. Left alone it blocks
+  # on the sensor for its full retry count before it even looks at what you
+  # typed, which is slower than no fingerprint at all. Ordering it after unix
+  # gives both paths: a typed password succeeds immediately, and Enter on an
+  # empty password falls through to the sensor.
+  security.pam.services.swaylock.rules.auth.fprintd.order = 11750;
 
   # polkit + keyring + dconf for gsettings-driven theming.
   security.polkit.enable = true;
