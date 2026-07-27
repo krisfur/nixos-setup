@@ -31,6 +31,7 @@
     # ~/.config/xdg-terminals.list (home.nix).
     xdg-terminal-exec
     networkmanagerapplet # nm-applet tray + nm-connection-editor (replaces nmtui)
+    iw                 # wifi diagnostics: `iw reg get`, `iw phy` channel/band list
     discord            # chat
     mpv                # video
     ffmpeg             # video/audio transcoding CLI
