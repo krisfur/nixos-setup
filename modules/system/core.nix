@@ -21,13 +21,10 @@
   # --rollback` / GC; this only limits what's listed at boot.)
   boot.loader.systemd-boot.configurationLimit = 3;
 
-  # Quiet the boot console so kernel/boot text doesn't bleed onto tty1 and
-  # garble the greetd greeter (the "double lines" artifact).
-  # pcie_aspm.policy: the BIOS default leaves link power management to
-  # firmware, which on this board never enables L1.2 on the NVMe and wifi
-  # links. powersupersave lets the kernel pick the deepest state each link
-  # advertises. If this ever causes NVMe stalls or wifi drops, drop back to
-  # "powersave" (L1 only, no L1.2 substates) before removing it entirely.
+  # quiet: keeps kernel/boot text off tty1, which otherwise garbles the greetd
+  # greeter (the "double lines" artifact).
+  # pcie_aspm.policy: firmware never enables L1.2 on the NVMe and wifi links.
+  # If this causes NVMe stalls or wifi drops, step down to "powersave".
   boot.kernelParams = [ "quiet" "pcie_aspm.policy=powersupersave" ];
   boot.consoleLogLevel = 0;
   boot.initrd.verbose = false;
@@ -36,47 +33,34 @@
   networking.networkmanager.enable = true;
   networking.firewall.enable = true;
 
-  # Wifi regulatory domain. ath11k fails its own country lookup at boot
-  # ("Failed to set the requested Country regulatory setting" / "failed to
-  # process regulatory info -22"), which leaves cfg80211 in the world domain
-  # (00) — the most conservative profile, with reduced TX power and 5 GHz
-  # channels restricted to passive scan. Pin GB explicitly. regulatory.db is
-  # already present via linux-firmware; wirelessRegulatoryDatabase just makes
-  # that dependency explicit instead of incidental.
+  # localsend (from the old Sway setup's ufw rules).
+  networking.firewall.allowedTCPPorts = [ 53317 ];
+  networking.firewall.allowedUDPPorts = [ 53317 ];
+
+  # Pin the global regulatory domain to GB. This does not reach the ath11k
+  # card: it is self-managed and keeps its firmware's US domain, logging a
+  # harmless "failed to process regulatory info -22" at boot. 6 GHz works
+  # regardless — that error is not fixable from the OS, so don't chase it.
   hardware.wirelessRegulatoryDatabase = true;
   boot.extraModprobeConfig = ''
     options cfg80211 ieee80211_regdom=GB
   '';
-  # localsend (from the old Sway setup's ufw rules).
-  networking.firewall.allowedTCPPorts = [ 53317 ];
-  networking.firewall.allowedUDPPorts = [ 53317 ];
 
   time.timeZone = "Europe/London";
   i18n.defaultLocale = "en_GB.UTF-8";
   console.keyMap = "uk";
 
   hardware.bluetooth.enable = true;
-  # Don't power the radio at boot — nothing pairs automatically here, so it
-  # otherwise sits enabled and idle. `bluetoothctl power on` (or the tray)
-  # brings it up on demand.
+  # Nothing pairs automatically, so leave the radio off until asked for.
   hardware.bluetooth.powerOnBoot = false;
 
   services.power-profiles-daemon.enable = true;
 
-  # ppd 0.30 ships optional amdgpu actions whose on/off state lives in
-  # /var/lib/power-profiles-daemon, not in config, so pin them here instead of
-  # letting the stateful toggles drift.
-  #
-  # amdgpu_panel_power (ABM) is on trial: it was previously blocked outright
-  # because it visibly dims the panel on power-saver, which is this machine's
-  # default unplugged state. We're now letting it run to find out whether the
-  # dimming is actually bothersome in practice. TO REVERT: put
-  # `--block-action amdgpu_panel_power` back on the ExecStart line below and
-  # drop it from the ExecStartPost --enable list.
-  #
-  # amdgpu_dpm (GPU clock tuning, no visual effect) stays enabled either way.
-  # The leading "" in ExecStart clears the upstream unit's entry before
-  # replacing it.
+  # ppd 0.30's amdgpu actions store their on/off state in
+  # /var/lib/power-profiles-daemon rather than in config, so re-assert both on
+  # every start to stop the stateful toggles drifting. amdgpu_panel_power is
+  # ABM, which dims the panel on power-saver; amdgpu_dpm tunes GPU clocks with
+  # no visual effect. The leading "" clears the upstream ExecStart entry.
   systemd.services.power-profiles-daemon.serviceConfig = {
     ExecStart = [
       ""
@@ -116,27 +100,19 @@
   services.udev.extraRules = ''
     SUBSYSTEM=="power_supply", ATTR{type}=="Mains", RUN+="${pkgs.systemd}/bin/systemctl start --no-block power-profile-on-ac.service"
 
-    # PCI runtime power management. Every device on this machine came up with
-    # power/control=on, i.e. runtime PM disabled — power-profiles-daemon
-    # doesn't touch this (TLP and `powertop --auto-tune` do, but TLP conflicts
-    # with ppd and we keep ppd for the AC/battery profile switching above).
-    # "auto" lets each driver drop its device to D3 when idle and resume on
-    # demand; this is also what parks the built-in Realtek NIC, which
-    # otherwise keeps its PHY powered whenever the interface is up with no
-    # cable. Ethernet still works — r8169 resumes on carrier detect.
+    # Runtime PM defaults to off on every PCI device and ppd never sets it
+    # (TLP would, but conflicts with ppd). "auto" lets drivers drop to D3 when
+    # idle, which also parks the unused Realtek NIC; it resumes on carrier.
     ACTION=="add", SUBSYSTEM=="pci", ATTR{power/control}="auto"
   '';
 
-  # Wifi power save: NetworkManager leaves this at "default" (0), which defers
-  # to the driver. Pin it on so ath11k actually uses PS-Poll between beacons.
+  # NM otherwise defers to the driver default, which leaves this off.
   networking.networkmanager.wifi.powersave = true;
 
   boot.kernel.sysctl = {
-    # The NMI watchdog wakes every core on a timer to detect hard lockups.
-    # Useful when debugging kernel hangs, pure overhead otherwise.
+    # Per-core lockup-detector timer; only useful when debugging kernel hangs.
     "kernel.nmi_watchdog" = 0;
-    # Batch writeback into fewer, larger flushes so the NVMe gets longer
-    # uninterrupted idle windows to reach its deep APST states.
+    # Fewer, larger writeback flushes so the NVMe reaches deep APST states.
     "vm.dirty_writeback_centisecs" = 1500;
   };
 
