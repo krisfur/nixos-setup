@@ -340,7 +340,7 @@ in
           dots_size = 0.25
           dots_spacing = 0.3
           dots_rounding = -1
-          placeholder_text = <span size="24pt"> 󰌾 / 󰈷 </span>
+          placeholder_text = <span size="24pt"> 󰌾 <span alpha="60%">/</span> 󰈷 </span>
           fail_text = <i>$FAIL</i>
           fade_on_empty = false
       }
@@ -348,7 +348,7 @@ in
       auth {
           fingerprint {
               enabled = true
-              ready_message = <span size="24pt"> 󰌾 / 󰈷 </span>
+              ready_message = <span size="24pt"> 󰌾 <span alpha="60%">/</span> 󰈷 </span>
               present_message = <span size="24pt"> 󰈷 </span>
           }
       }
