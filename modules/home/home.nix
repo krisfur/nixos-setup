@@ -3,16 +3,14 @@
 let
   configDir = ../../config;
   wallpaper = "${config.xdg.configHome}/sway/wallpaper.png";
-  # hyprlock rather than swaylock: it waits on the password and the fingerprint
-  # sensor concurrently, which swaylock structurally can't (it collects input
-  # first, then runs PAM). Appearance comes from hypr/hyprlock.conf below.
+  # hyprlock, not swaylock: it waits on password and fingerprint concurrently,
+  # which swaylock can't (it collects input first, then runs PAM).
   lockCmd = "${pkgs.hyprlock}/bin/hyprlock --grace 0 --no-fade-in";
 
-  # before-sleep needs a command that *returns*, because swayidle holds the
-  # sleep inhibitor until it exits — and hyprlock has no -f/daemonize flag, so
-  # running it directly would block suspend until unlocked. Background it and
-  # settle briefly so it takes the ext-session-lock before the machine goes
-  # down; otherwise suspend can win the race and flash the desktop on resume.
+  # swayidle holds the sleep inhibitor until before-sleep exits, and hyprlock
+  # has no daemonize flag, so running it directly would block suspend until
+  # unlocked. Background it, then settle so it takes the lock before the
+  # machine goes down — otherwise resume can flash the desktop.
   sleepLockCmd = pkgs.writeShellScript "sleep-lock" ''
     ${lockCmd} &
     sleep 1
@@ -296,8 +294,8 @@ in
     # notifications
     "swaync/style.css".source = "${configDir}/swaync/style.css";
 
-    # Lock screen. Generated rather than vendored so the wallpaper path
-    # resolves. auth:fingerprint needs the PAM service in desktop.nix.
+    # Lock screen. Generated, not vendored, so the wallpaper path resolves.
+    # Colours mirror the waybar pills in config/waybar/style.css.
     "hypr/hyprlock.conf".text = ''
       background {
           monitor =
@@ -306,16 +304,44 @@ in
           blur_size = 7
       }
 
+      label {
+          monitor =
+          text = cmd[update:30000] date +"%H:%M"
+          color = rgb(eceff4)
+          font_size = 72
+          font_family = JetBrainsMono Nerd Font
+          position = 0, 150
+          halign = center
+          valign = center
+      }
+
+      label {
+          monitor =
+          text = cmd[update:30000] date +"%A, %e %B"
+          color = rgb(d8dee9)
+          font_size = 16
+          font_family = JetBrainsMono Nerd Font
+          position = 0, 80
+          halign = center
+          valign = center
+      }
+
       input-field {
           monitor =
-          size = 300, 50
-          outline_thickness = 2
+          size = 320, 50
+          rounding = 8
+          outline_thickness = 1
+          inner_color = rgb(3b4252)
+          outer_color = rgb(4c566a)
+          check_color = rgb(88c0d0)
+          fail_color = rgb(bf616a)
+          font_color = rgb(eceff4)
+          font_family = JetBrainsMono Nerd Font
           dots_size = 0.25
           dots_spacing = 0.3
-          outer_color = rgb(88c0d0)
-          inner_color = rgb(2e3440)
-          font_color = rgb(eceff4)
+          dots_rounding = -1
           placeholder_text = <i>Password or fingerprint</i>
+          fail_text = <i>$FAIL</i>
           fade_on_empty = false
       }
 

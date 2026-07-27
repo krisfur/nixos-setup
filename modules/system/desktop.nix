@@ -77,20 +77,18 @@ in
   security.pam.services.greetd.fprintAuth = false;
   security.pam.services.login.fprintAuth = false;
 
-  # The lock screen needs its own PAM service or PAM falls back to
-  # /etc/pam.d/other — warn + deny — and rejects every password, locking you
-  # out of the session. fprintAuth is off here because hyprlock drives fprintd
-  # directly over D-Bus for its parallel password+fingerprint auth; leaving
+  # The lock screen needs its own PAM service — without one PAM falls back to
+  # /etc/pam.d/other (warn + deny) and rejects every password, locking you out.
+  # fprintAuth is off because hyprlock drives fprintd directly over D-Bus; a
   # pam_fprintd in the stack too makes both paths fight over the sensor.
   security.pam.services.hyprlock = {
     fprintAuth = false;
   };
 
-  # The reader doesn't survive suspend: hyprlock claims the device in
-  # before-sleep, the USB device is reset while asleep, and on resume fprintd
-  # fails to reclaim it ("Device is already open"), so the lock screen accepts
-  # only a password. Known upstream — hyprwm/hyprlock#577, nixpkgs#432276.
-  # Restarting fprintd on resume hands hyprlock a device it can claim again.
+  # The reader doesn't survive suspend — fprintd can't reclaim the device on
+  # resume ("Device is already open"), leaving the lock screen password-only.
+  # Known upstream (hyprwm/hyprlock#577, nixpkgs#432276); restarting fprintd
+  # gives hyprlock a device it can claim again.
   powerManagement.resumeCommands = ''
     ${pkgs.systemd}/bin/systemctl restart fprintd.service
   '';
