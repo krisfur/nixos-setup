@@ -90,6 +90,16 @@ in
   # empty password falls through to the sensor.
   security.pam.services.swaylock.rules.auth.fprintd.order = 11750;
 
+  # TRIAL, alongside the hyprlock package in packages.nix. Without its own PAM
+  # service, PAM falls back to /etc/pam.d/other — warn + deny — and the locker
+  # rejects every password, which means a locked-out session. fprintAuth is off
+  # because hyprlock drives fprintd directly over D-Bus for its parallel
+  # password+fingerprint auth; leaving pam_fprintd in the stack as well makes
+  # both paths fight over the sensor.
+  security.pam.services.hyprlock = {
+    fprintAuth = false;
+  };
+
   # polkit + keyring + dconf for gsettings-driven theming.
   security.polkit.enable = true;
   services.gnome.gnome-keyring.enable = true;
