@@ -86,6 +86,15 @@ in
     fprintAuth = false;
   };
 
+  # The reader doesn't survive suspend: hyprlock claims the device in
+  # before-sleep, the USB device is reset while asleep, and on resume fprintd
+  # fails to reclaim it ("Device is already open"), so the lock screen accepts
+  # only a password. Known upstream — hyprwm/hyprlock#577, nixpkgs#432276.
+  # Restarting fprintd on resume hands hyprlock a device it can claim again.
+  powerManagement.resumeCommands = ''
+    ${pkgs.systemd}/bin/systemctl restart fprintd.service
+  '';
+
   # polkit + keyring + dconf for gsettings-driven theming.
   security.polkit.enable = true;
   services.gnome.gnome-keyring.enable = true;
