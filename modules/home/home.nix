@@ -284,6 +284,41 @@ in
     "swaync/style.css".source = "${configDir}/swaync/style.css";
     "swaylock/config".source = "${configDir}/swaylock/config";
 
+    # hyprlock TRIAL (see the package in packages.nix and the PAM service in
+    # desktop.nix). The draw over swaylock is auth:fingerprint, which waits on
+    # the password and the sensor concurrently instead of serially. Generated
+    # rather than vendored so the wallpaper path resolves. Not yet wired into
+    # swayidle or lockCmd — run `hyprlock` by hand to test.
+    "hypr/hyprlock.conf".text = ''
+      background {
+          monitor =
+          path = ${wallpaper}
+          blur_passes = 3
+          blur_size = 7
+      }
+
+      input-field {
+          monitor =
+          size = 300, 50
+          outline_thickness = 2
+          dots_size = 0.25
+          dots_spacing = 0.3
+          outer_color = rgb(88c0d0)
+          inner_color = rgb(2e3440)
+          font_color = rgb(eceff4)
+          placeholder_text = <i>Password or fingerprint</i>
+          fade_on_empty = false
+      }
+
+      auth {
+          fingerprint {
+              enabled = true
+              ready_message = Touch the sensor
+              present_message = Scanning...
+          }
+      }
+    '';
+
     # Picks ghostty as the terminal for Terminal=true desktop entries, via
     # xdg-terminal-exec (packages.nix).
     "xdg-terminals.list".text = "com.mitchellh.ghostty.desktop\n";
