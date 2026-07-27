@@ -340,7 +340,7 @@ in
           dots_size = 0.25
           dots_spacing = 0.3
           dots_rounding = -1
-          placeholder_text = 󰌾  󰈷
+          placeholder_text = <big><big>󰌾  󰈷 </big></big>
           fail_text = <i>$FAIL</i>
           fade_on_empty = false
       }
@@ -348,8 +348,8 @@ in
       auth {
           fingerprint {
               enabled = true
-              ready_message = 󰌾  󰈷
-              present_message = 󰈷
+              ready_message = <big><big>󰌾  󰈷 </big></big>
+              present_message = <big><big>󰈷 </big></big>
           }
       }
     '';
