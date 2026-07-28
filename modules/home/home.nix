@@ -368,7 +368,13 @@ in
           dots_size = 0.25
           dots_spacing = 0.3
           dots_rounding = -1
-          placeholder_text = <span size="24pt"> 󰌾 <span alpha="60%">/</span> 󰈷 </span>
+          # $FPRINTPROMPT expands to ready_message/present_message below, and to
+          # nothing once the reader drops out — so the slash and fingerprint
+          # appear inline only while it is actually live, leaving a bare lock
+          # otherwise. hyprlock disables fingerprint on device disconnect and
+          # never retries (hyprwm/hyprlock#711), which happens after a long
+          # suspend, so a static combined glyph would lie about it.
+          placeholder_text = <span size="24pt"> 󰌾$FPRINTPROMPT </span>
           fail_text = <i>$FAIL</i>
           fade_on_empty = false
       }
@@ -376,8 +382,8 @@ in
       auth {
           fingerprint {
               enabled = true
-              ready_message = <span size="24pt"> 󰌾 <span alpha="60%">/</span> 󰈷 </span>
-              present_message = <span size="24pt"> 󰈷 </span>
+              ready_message =  <span alpha="60%">/</span> 󰈷
+              present_message =  <span alpha="60%">/</span> 󰈷
           }
       }
     '';
