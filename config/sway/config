@@ -8,7 +8,7 @@ set $terminal ghostty
 set $fileManager thunar
 set $menu fuzzel
 set $browser helium
-set $lockcmd hyprlock --grace 0 --no-fade-in
+set $lockcmd ~/.config/sway/lock.sh
 
 output * scale 1
 

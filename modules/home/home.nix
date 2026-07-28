@@ -7,14 +7,14 @@ let
   # which swaylock can't (it collects input first, then runs PAM).
   hyprlockBin = "${pkgs.hyprlock}/bin/hyprlock --grace 0 --no-fade-in";
 
-  # If the reader errors mid-verify (it disconnects across a long suspend),
-  # fprintd is left holding a claim from a client that no longer exists, and
-  # every later lock is refused with "Device was already claimed" until the
-  # daemon restarts. Resume is the wrong moment to reset it — hyprlock is live
-  # there and may hold a working claim — but once hyprlock has exited nothing
-  # owns the device, so a restart is always safe and leaves the next lock
-  # clean. Needs the polkit rule in modules/system/desktop.nix.
+  # Every lock path funnels through here, so both guards live in one place.
+  # pgrep: several paths can fire at once (the lid triggers both the sway
+  # bindswitch and before-sleep), and stacked instances leave a black screen.
+  # The restart clears a stale fprintd claim left by a disconnect mid-verify,
+  # which otherwise blocks every later lock; safe only once hyprlock has exited,
+  # not at resume. Needs the polkit rule in modules/system/desktop.nix.
   lockCmd = pkgs.writeShellScript "lock" ''
+    ${pkgs.procps}/bin/pgrep -x hyprlock >/dev/null && exit 0
     ${hyprlockBin}
     ${pkgs.systemd}/bin/systemctl restart fprintd.service || true
   '';
@@ -23,14 +23,7 @@ let
   # has no daemonize flag, so running it directly would block suspend until
   # unlocked. Background it, then settle so it takes the lock before the
   # machine goes down — otherwise resume can flash the desktop.
-  #
-  # The pgrep guard matters: idling past both timeouts locks at 900s and then
-  # suspends at 1800s, which fires this too. Without it a second hyprlock
-  # stacks on the first, so unlocking one leaves the other still holding the
-  # session — a black screen that looks like it re-locked — and the two fight
-  # over the fprintd device, killing fingerprint auth.
   sleepLockCmd = pkgs.writeShellScript "sleep-lock" ''
-    ${pkgs.procps}/bin/pgrep -x hyprlock >/dev/null && exit 0
     ${lockCmd} &
     sleep 1
   '';
@@ -47,7 +40,6 @@ let
   # which is why this only appeared after the hyprlock migration.
   idleLockCmd = pkgs.writeShellScript "idle-lock" ''
     ${pkgs.procps}/bin/pgrep -f 'SteamLaunch AppId=' >/dev/null && exit 0
-    ${pkgs.procps}/bin/pgrep -x hyprlock >/dev/null && exit 0
     ${lockCmd} &
   '';
 
@@ -380,12 +372,9 @@ in
           dots_size = 0.25
           dots_spacing = 0.3
           dots_rounding = -1
-          # $FPRINTPROMPT expands to ready_message/present_message below, and to
-          # nothing once the reader drops out — so the slash and fingerprint
-          # appear inline only while it is actually live, leaving a bare lock
-          # otherwise. hyprlock disables fingerprint on device disconnect and
-          # never retries (hyprwm/hyprlock#711), which happens after a long
-          # suspend, so a static combined glyph would lie about it.
+          # $FPRINTPROMPT expands to ready_message below, or to nothing once the
+          # reader drops out — so the lock shows alone rather than claiming a
+          # fingerprint that hyprlock has given up on (hyprwm/hyprlock#711).
           placeholder_text = <span size="24pt"> 󰌾$FPRINTPROMPT </span>
           fail_text = <i>$FAIL</i>
           fade_on_empty = false
@@ -407,6 +396,12 @@ in
     # sway compositor
     "sway/config".source = "${configDir}/sway/config";
     "sway/wallpaper.png".source = "${configDir}/wallpaper/wallpaper.png";
+    # $lockcmd and the lid bindswitch point here so they get the same guards.
+    "sway/lock.sh" = {
+      source = lockCmd;
+      executable = true;
+    };
+
     "sway/sway-screenshot.sh" = {
       source = "${configDir}/sway/sway-screenshot.sh";
       executable = true;
