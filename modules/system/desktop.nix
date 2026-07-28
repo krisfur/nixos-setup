@@ -77,6 +77,16 @@ in
   security.pam.services.greetd.fprintAuth = false;
   security.pam.services.login.fprintAuth = false;
 
+  # fprintd is D-Bus activated and exits ~30s after going idle, which pulls the
+  # device out from under an already-running hyprlock: it keeps a dead handle
+  # and logs "Device was not claimed before use" on the next attempt. The
+  # visible effect is that fingerprint unlock only works if you come back
+  # within ~30s of locking. Keep the daemon resident instead (~5 MB).
+  systemd.services.fprintd.serviceConfig.ExecStart = [
+    ""
+    "${pkgs.fprintd}/libexec/fprintd --no-timeout"
+  ];
+
   # The lock screen needs its own PAM service — without one PAM falls back to
   # /etc/pam.d/other (warn + deny) and rejects every password, locking you out.
   # fprintAuth is off because hyprlock drives fprintd directly over D-Bus; a
