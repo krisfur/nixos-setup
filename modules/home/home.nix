@@ -5,7 +5,19 @@ let
   wallpaper = "${config.xdg.configHome}/sway/wallpaper.png";
   # hyprlock, not swaylock: it waits on password and fingerprint concurrently,
   # which swaylock can't (it collects input first, then runs PAM).
-  lockCmd = "${pkgs.hyprlock}/bin/hyprlock --grace 0 --no-fade-in";
+  hyprlockBin = "${pkgs.hyprlock}/bin/hyprlock --grace 0 --no-fade-in";
+
+  # If the reader errors mid-verify (it disconnects across a long suspend),
+  # fprintd is left holding a claim from a client that no longer exists, and
+  # every later lock is refused with "Device was already claimed" until the
+  # daemon restarts. Resume is the wrong moment to reset it — hyprlock is live
+  # there and may hold a working claim — but once hyprlock has exited nothing
+  # owns the device, so a restart is always safe and leaves the next lock
+  # clean. Needs the polkit rule in modules/system/desktop.nix.
+  lockCmd = pkgs.writeShellScript "lock" ''
+    ${hyprlockBin}
+    ${pkgs.systemd}/bin/systemctl restart fprintd.service || true
+  '';
 
   # swayidle holds the sleep inhibitor until before-sleep exits, and hyprlock
   # has no daemonize flag, so running it directly would block suspend until

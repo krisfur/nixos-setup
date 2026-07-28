@@ -102,6 +102,20 @@ in
   # claimed before use") and the lock screen loses fingerprint after a suspend.
   # fprintd takes its own "Suspend fingerprint readers" delay inhibitor and
   # handles the reader across suspend itself.
+  #
+  # The reset happens after unlock instead (see lockCmd in modules/home/home.nix),
+  # which is the only moment nothing owns the device. This rule lets that run
+  # without a password prompt; it grants restarting fprintd.service and nothing
+  # else, to a user who already has sudo.
+  security.polkit.extraConfig = ''
+    polkit.addRule(function(action, subject) {
+      if (action.id == "org.freedesktop.systemd1.manage-units" &&
+          action.lookup("unit") == "fprintd.service" &&
+          subject.user == "kfurman") {
+        return polkit.Result.YES;
+      }
+    });
+  '';
 
   # polkit + keyring + dconf for gsettings-driven theming.
   security.polkit.enable = true;
