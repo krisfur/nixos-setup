@@ -69,10 +69,9 @@ let
     # systemctl line above, and a second launch loses the bus-name race.
     ${pkgs.networkmanagerapplet}/bin/nm-applet --indicator &
     ${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1 &
-    # TEMPORARY TEST VALUES — revert to 900 / 1800 once verified.
     ${pkgs.swayidle}/bin/swayidle -w \
-      timeout 30 '${idleLockCmd}' \
-      timeout 60 '${idleSuspendCmd}' \
+      timeout 900 '${idleLockCmd}' \
+      timeout 1800 '${idleSuspendCmd}' \
       before-sleep '${sleepLockCmd}' &
   '';
 
