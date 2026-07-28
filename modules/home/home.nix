@@ -10,19 +10,11 @@ let
   # Unguarded on purpose: an orphaned hyprlock would otherwise no-op every lock
   # path. The restart clears a stale fprintd claim that blocks later locks; only
   # safe after hyprlock exits. Needs the polkit rule in desktop.nix.
+  # Don't try to force a redraw with SIGUSR2: hyprlock installs that handler
+  # some way into startup, and until then the default disposition terminates
+  # the process — the locker dies on launch and the machine sits unlocked.
   lockCmd = pkgs.writeShellScript "lock" ''
-    ${hyprlockBin} &
-    pid=$!
-    # SIGUSR2 fires hyprlock's timers immediately. The input field only
-    # re-evaluates its placeholder during draw(), so this is what makes the
-    # fingerprint icon appear as soon as fprintd is ready rather than at the
-    # next clock tick. A short burst covers however long the claim takes,
-    # then stops — no need to poll for the rest of the lock.
-    for _ in 1 2 3 4 5; do
-      sleep 0.4
-      kill -USR2 $pid 2>/dev/null || break
-    done
-    wait $pid
+    ${hyprlockBin}
     ${pkgs.systemd}/bin/systemctl restart fprintd.service || true
   '';
 
@@ -339,7 +331,10 @@ in
 
       label {
           monitor =
-          text = cmd[update:30000] date +"%H:%M"
+          # Polled far faster than a clock needs: this timer is the only thing
+          # repainting the input field, which re-evaluates its placeholder only
+          # on redraw, so it sets how fast the fingerprint icon appears.
+          text = cmd[update:500] date +"%H:%M"
           color = rgb(eceff4)
           font_size = 72
           font_family = JetBrainsMono Nerd Font
