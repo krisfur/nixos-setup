@@ -7,14 +7,13 @@ let
   # which swaylock can't (it collects input first, then runs PAM).
   hyprlockBin = "${pkgs.hyprlock}/bin/hyprlock --grace 0 --no-fade-in";
 
-  # Every lock path funnels through here, so both guards live in one place.
-  # pgrep: several paths can fire at once (the lid triggers both the sway
-  # bindswitch and before-sleep), and stacked instances leave a black screen.
+  # Deliberately unguarded: an orphaned hyprlock that has lost its surface but
+  # not exited would otherwise make every lock path a no-op, which fails open.
+  # Only before-sleep checks, since that is the one path that genuinely stacks.
   # The restart clears a stale fprintd claim left by a disconnect mid-verify,
-  # which otherwise blocks every later lock; safe only once hyprlock has exited,
-  # not at resume. Needs the polkit rule in modules/system/desktop.nix.
+  # which otherwise blocks later locks; safe once hyprlock has exited, not at
+  # resume. Needs the polkit rule in modules/system/desktop.nix.
   lockCmd = pkgs.writeShellScript "lock" ''
-    ${pkgs.procps}/bin/pgrep -x hyprlock >/dev/null && exit 0
     ${hyprlockBin}
     ${pkgs.systemd}/bin/systemctl restart fprintd.service || true
   '';
@@ -23,7 +22,12 @@ let
   # has no daemonize flag, so running it directly would block suspend until
   # unlocked. Background it, then settle so it takes the lock before the
   # machine goes down — otherwise resume can flash the desktop.
+  # Guarded here only: idling past both timers locks at 900s and then suspends
+  # at 1800s, and the lid fires the sway bindswitch alongside this — stacking a
+  # second hyprlock leaves a black screen that looks like a re-lock. Failing to
+  # lock here is safe because the machine is suspending with a lock already up.
   sleepLockCmd = pkgs.writeShellScript "sleep-lock" ''
+    ${pkgs.procps}/bin/pgrep -x hyprlock >/dev/null && exit 0
     ${lockCmd} &
     sleep 1
   '';
