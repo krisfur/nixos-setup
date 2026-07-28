@@ -394,8 +394,8 @@ in
       auth {
           fingerprint {
               enabled = true
-              ready_message =  <span alpha="60%">/</span> 󰈷
-              present_message =  <span alpha="60%">/</span> 󰈷
+              ready_message = <span alpha="60%"> /</span> 󰈷
+              present_message = <span alpha="60%"> /</span> 󰈷
           }
       }
     '';
