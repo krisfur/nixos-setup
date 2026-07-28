@@ -379,6 +379,9 @@ in
       auth {
           fingerprint {
               enabled = true
+              # Wiki-undocumented (hyprlock#625). The 250ms default burns every
+              # retry before the reader is back from a long suspend.
+              retry_delay = 2000
               ready_message = <span alpha="60%"> /</span> 󰈷
               present_message = <span alpha="60%"> /</span> 󰈷
           }
