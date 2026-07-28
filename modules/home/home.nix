@@ -342,7 +342,11 @@ in
 
       label {
           monitor =
-          text = cmd[update:30000] date +"%H:%M"
+          # 1s rather than the 60s the clock itself needs: hyprlock only
+          # re-evaluates the input field's placeholder on redraw, and this
+          # timer is the only thing driving redraws on an idle lock screen.
+          # At 30s the fingerprint icon took up to half a minute to appear.
+          text = cmd[update:1000] date +"%H:%M"
           color = rgb(eceff4)
           font_size = 72
           font_family = JetBrainsMono Nerd Font
