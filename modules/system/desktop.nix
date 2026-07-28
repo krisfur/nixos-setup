@@ -77,11 +77,9 @@ in
   security.pam.services.greetd.fprintAuth = false;
   security.pam.services.login.fprintAuth = false;
 
-  # fprintd is D-Bus activated and exits ~30s after going idle, which pulls the
-  # device out from under an already-running hyprlock: it keeps a dead handle
-  # and logs "Device was not claimed before use" on the next attempt. The
-  # visible effect is that fingerprint unlock only works if you come back
-  # within ~30s of locking. Keep the daemon resident instead (~5 MB).
+  # fprintd exits ~30s after going idle, pulling the device out from under a
+  # running hyprlock — fingerprint then only worked if you returned within 30s.
+  # Keep it resident (~5 MB).
   systemd.services.fprintd.serviceConfig.ExecStart = [
     ""
     "${pkgs.fprintd}/libexec/fprintd --no-timeout"
@@ -95,18 +93,11 @@ in
     fprintAuth = false;
   };
 
-  # Deliberately NOT restarting fprintd on resume. That was a workaround for
-  # the idle-exit above, and once --no-timeout fixed the real cause it became
-  # actively harmful: it tears the daemon down under a hyprlock that is already
-  # holding a claim, so the new instance rejects its Release ("Device was not
-  # claimed before use") and the lock screen loses fingerprint after a suspend.
-  # fprintd takes its own "Suspend fingerprint readers" delay inhibitor and
-  # handles the reader across suspend itself.
-  #
-  # The reset happens after unlock instead (see lockCmd in modules/home/home.nix),
-  # which is the only moment nothing owns the device. This rule lets that run
-  # without a password prompt; it grants restarting fprintd.service and nothing
-  # else, to a user who already has sudo.
+  # Don't restart fprintd on resume: it tears the daemon down under a hyprlock
+  # that already holds a good claim. fprintd handles suspend itself via its own
+  # inhibitor. The reset happens after unlock instead (lockCmd in home.nix),
+  # the only moment nothing owns the device — which this rule permits without a
+  # password prompt, for fprintd.service alone.
   security.polkit.extraConfig = ''
     polkit.addRule(function(action, subject) {
       if (action.id == "org.freedesktop.systemd1.manage-units" &&

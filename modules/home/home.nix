@@ -7,41 +7,27 @@ let
   # which swaylock can't (it collects input first, then runs PAM).
   hyprlockBin = "${pkgs.hyprlock}/bin/hyprlock --grace 0 --no-fade-in";
 
-  # Deliberately unguarded: an orphaned hyprlock that has lost its surface but
-  # not exited would otherwise make every lock path a no-op, which fails open.
-  # Only before-sleep checks, since that is the one path that genuinely stacks.
-  # The restart clears a stale fprintd claim left by a disconnect mid-verify,
-  # which otherwise blocks later locks; safe once hyprlock has exited, not at
-  # resume. Needs the polkit rule in modules/system/desktop.nix.
+  # Unguarded on purpose: an orphaned hyprlock would otherwise no-op every lock
+  # path. The restart clears a stale fprintd claim that blocks later locks; only
+  # safe after hyprlock exits. Needs the polkit rule in desktop.nix.
   lockCmd = pkgs.writeShellScript "lock" ''
     ${hyprlockBin}
     ${pkgs.systemd}/bin/systemctl restart fprintd.service || true
   '';
 
-  # swayidle holds the sleep inhibitor until before-sleep exits, and hyprlock
-  # has no daemonize flag, so running it directly would block suspend until
-  # unlocked. Background it, then settle so it takes the lock before the
-  # machine goes down — otherwise resume can flash the desktop.
-  # Guarded here only: idling past both timers locks at 900s and then suspends
-  # at 1800s, and the lid fires the sway bindswitch alongside this — stacking a
-  # second hyprlock leaves a black screen that looks like a re-lock. Failing to
-  # lock here is safe because the machine is suspending with a lock already up.
+  # swayidle waits for before-sleep to exit and hyprlock has no daemonize flag,
+  # so background it and settle before the machine goes down. Guarded here only:
+  # this is the one path that can fire on top of an existing lock.
   sleepLockCmd = pkgs.writeShellScript "sleep-lock" ''
     ${pkgs.procps}/bin/pgrep -x hyprlock >/dev/null && exit 0
     ${lockCmd} &
     sleep 1
   '';
 
-  # Controller input never reaches the compositor's seat, so swayidle counts a
-  # gamepad session as idle and locks mid-game. Steam's "reaper SteamLaunch
-  # AppId=..." process lives exactly as long as the game, so skip while it
-  # exists. The timer only re-arms on the next input event after a game exits.
-  #
-  # Backgrounded, not exec'd: swayidle runs with -w ("wait for command to
-  # finish"), so a foreground hyprlock blocks it until you unlock — and the
-  # 1800s suspend timeout below never fires, leaving the machine awake on the
-  # lock screen all night. swaylock's -f used to fork and return immediately,
-  # which is why this only appeared after the hyprlock migration.
+  # Controller input never reaches the seat, so swayidle counts a gamepad
+  # session as idle and locks mid-game; Steam's reaper process marks a running
+  # game. Backgrounded because swayidle -w waits, and a foreground hyprlock
+  # would block the 1800s suspend timeout below from ever firing.
   idleLockCmd = pkgs.writeShellScript "idle-lock" ''
     ${pkgs.procps}/bin/pgrep -f 'SteamLaunch AppId=' >/dev/null && exit 0
     ${lockCmd} &
@@ -342,11 +328,10 @@ in
 
       label {
           monitor =
-          # 1s rather than the 60s the clock itself needs: hyprlock only
-          # re-evaluates the input field's placeholder on redraw, and this
-          # timer is the only thing driving redraws on an idle lock screen.
-          # At 30s the fingerprint icon took up to half a minute to appear.
-          text = cmd[update:1000] date +"%H:%M"
+          # Built-in clock, no `date` fork. Its per-second refresh is also what
+          # repaints the input field, which only re-evaluates its placeholder on
+          # redraw — at cmd[update:30000] the fingerprint icon lagged that long.
+          text = $TIME
           color = rgb(eceff4)
           font_size = 72
           font_family = JetBrainsMono Nerd Font
