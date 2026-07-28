@@ -95,13 +95,13 @@ in
     fprintAuth = false;
   };
 
-  # The reader doesn't survive suspend — fprintd can't reclaim the device on
-  # resume ("Device is already open"), leaving the lock screen password-only.
-  # Known upstream (hyprwm/hyprlock#577, nixpkgs#432276); restarting fprintd
-  # gives hyprlock a device it can claim again.
-  powerManagement.resumeCommands = ''
-    ${pkgs.systemd}/bin/systemctl restart fprintd.service
-  '';
+  # Deliberately NOT restarting fprintd on resume. That was a workaround for
+  # the idle-exit above, and once --no-timeout fixed the real cause it became
+  # actively harmful: it tears the daemon down under a hyprlock that is already
+  # holding a claim, so the new instance rejects its Release ("Device was not
+  # claimed before use") and the lock screen loses fingerprint after a suspend.
+  # fprintd takes its own "Suspend fingerprint readers" delay inhibitor and
+  # handles the reader across suspend itself.
 
   # polkit + keyring + dconf for gsettings-driven theming.
   security.polkit.enable = true;
