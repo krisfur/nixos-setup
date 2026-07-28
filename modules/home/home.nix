@@ -11,7 +11,14 @@ let
   # has no daemonize flag, so running it directly would block suspend until
   # unlocked. Background it, then settle so it takes the lock before the
   # machine goes down — otherwise resume can flash the desktop.
+  #
+  # The pgrep guard matters: idling past both timeouts locks at 900s and then
+  # suspends at 1800s, which fires this too. Without it a second hyprlock
+  # stacks on the first, so unlocking one leaves the other still holding the
+  # session — a black screen that looks like it re-locked — and the two fight
+  # over the fprintd device, killing fingerprint auth.
   sleepLockCmd = pkgs.writeShellScript "sleep-lock" ''
+    ${pkgs.procps}/bin/pgrep -x hyprlock >/dev/null && exit 0
     ${lockCmd} &
     sleep 1
   '';
@@ -22,6 +29,7 @@ let
   # exists. The timer only re-arms on the next input event after a game exits.
   idleLockCmd = pkgs.writeShellScript "idle-lock" ''
     ${pkgs.procps}/bin/pgrep -f 'SteamLaunch AppId=' >/dev/null && exit 0
+    ${pkgs.procps}/bin/pgrep -x hyprlock >/dev/null && exit 0
     exec ${lockCmd}
   '';
 
