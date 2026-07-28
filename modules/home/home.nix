@@ -27,10 +27,16 @@ let
   # gamepad session as idle and locks mid-game. Steam's "reaper SteamLaunch
   # AppId=..." process lives exactly as long as the game, so skip while it
   # exists. The timer only re-arms on the next input event after a game exits.
+  #
+  # Backgrounded, not exec'd: swayidle runs with -w ("wait for command to
+  # finish"), so a foreground hyprlock blocks it until you unlock — and the
+  # 1800s suspend timeout below never fires, leaving the machine awake on the
+  # lock screen all night. swaylock's -f used to fork and return immediately,
+  # which is why this only appeared after the hyprlock migration.
   idleLockCmd = pkgs.writeShellScript "idle-lock" ''
     ${pkgs.procps}/bin/pgrep -f 'SteamLaunch AppId=' >/dev/null && exit 0
     ${pkgs.procps}/bin/pgrep -x hyprlock >/dev/null && exit 0
-    exec ${lockCmd}
+    ${lockCmd} &
   '';
 
   # Suspend after 30 min idle, with the same skip-while-gaming guard. Media
