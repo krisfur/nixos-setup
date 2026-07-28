@@ -328,10 +328,11 @@ in
 
       label {
           monitor =
-          # Built-in clock, no `date` fork. Its per-second refresh is also what
-          # repaints the input field, which only re-evaluates its placeholder on
-          # redraw — at cmd[update:30000] the fingerprint icon lagged that long.
-          text = $TIME
+          # Polled far faster than a clock needs: this timer is the only thing
+          # repainting the input field, which re-evaluates its placeholder only
+          # on redraw, so it sets how fast the fingerprint icon appears. $TIME
+          # is cheaper but only ticks on the minute, which is far too slow.
+          text = cmd[update:500] date +"%H:%M"
           color = rgb(eceff4)
           font_size = 72
           font_family = JetBrainsMono Nerd Font
