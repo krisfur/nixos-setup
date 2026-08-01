@@ -173,6 +173,21 @@ in
     };
     gtk4.theme = null;
 
+    # Plain GTK4 apps (pavucontrol) don't follow the dconf color-scheme — that's
+    # libadwaita behaviour — so they come up light without this.
+    gtk3.extraConfig.gtk-application-prefer-dark-theme = true;
+    gtk4.extraConfig.gtk-application-prefer-dark-theme = true;
+
+    # GTK3 has no accent-color setting, so adw-gtk3's blue selection shows
+    # through on GTK3 menus (nm-applet). Override the named colours instead.
+    gtk3.extraCss = ''
+      @define-color theme_selected_bg_color #c9a06b;
+      @define-color theme_selected_fg_color #1e1a16;
+      @define-color accent_bg_color #c9a06b;
+      @define-color accent_fg_color #1e1a16;
+      @define-color accent_color #c9a06b;
+    '';
+
     # Focus rings, scoped to real controls. A bare `:focus-visible` also matches
     # ghostty's terminal widget, which fills the window — that drew a ring in
     # the same colour as the sway border just inside it, so the window looked
@@ -211,6 +226,13 @@ in
   dconf.settings."org/gnome/desktop/interface" = {
     color-scheme = "prefer-dark";
     accent-color = "orange";
+  };
+
+  # EasyEffects 8 is Qt6, not GTK, so it defaults to Breeze and ignores every
+  # GTK setting above. Point Qt's platform theme at GTK to pull the same colours.
+  qt = {
+    enable = true;
+    platformTheme.name = "gtk3";
   };
 
   # Speaker DSP: the P14s speakers are tuned for Windows' Dolby driver and
