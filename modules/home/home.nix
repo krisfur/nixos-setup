@@ -368,10 +368,10 @@ in
           dots_size = 0.25
           dots_spacing = 0.3
           dots_rounding = -1
-          # $FPRINTPROMPT expands to ready_message below, or to nothing once the
-          # reader drops out — so the lock shows alone rather than claiming a
-          # fingerprint that hyprlock has given up on (hyprwm/hyprlock#711).
-          placeholder_text = <span size="24pt"> 󰌾$FPRINTPROMPT </span>
+          # Static, not $FPRINTPROMPT: that variable also carries hyprlock's
+          # retry prose, which rendered at 24pt and shoved the layout around
+          # after any failed scan.
+          placeholder_text = <span size="24pt"> 󰌾 <span alpha="60%">/</span> 󰈷 </span>
           fail_text = <i>$FAIL</i>
           fade_on_empty = false
       }
@@ -382,8 +382,6 @@ in
               # Wiki-undocumented (hyprlock#625). The 250ms default burns every
               # retry before the reader is back from a long suspend.
               retry_delay = 2000
-              ready_message = <span alpha="60%"> /</span> 󰈷
-              present_message = <span alpha="60%"> /</span> 󰈷
           }
       }
     '';
