@@ -34,7 +34,8 @@ in
     xdg-utils
     # Theme + icons referenced by the home-manager configs.
     adw-gtk3
-    papirus-icon-theme
+    # Match the folder recolour in home.nix, or the system copy shadows it.
+    (papirus-icon-theme.override { color = "palebrown"; })
   ];
 
   # Login: greetd + tuigreet, launching sway.

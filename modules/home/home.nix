@@ -121,6 +121,37 @@ in
 
   programs.home-manager.enable = true;
 
+  # ls colours come from LS_COLORS, not the ANSI palette, so directories can be
+  # warm without repurposing an ANSI slot. Truecolor values, Dust palette.
+  home.sessionVariables.LS_COLORS = lib.concatStringsSep ":" [
+    "rs=0"
+    "di=1;38;2;201;160;107"   # directories - sand, bold
+    "ln=38;2;163;186;178"     # symlinks - muted teal
+    "or=38;2;176;87;74"       # broken symlink - red
+    "mi=38;2;176;87;74"       # missing target
+    "ex=38;2;138;148;100"     # executables - olive
+    "pi=38;2;138;112;80"      # fifo
+    "so=38;2;163;117;122"     # socket
+    "bd=38;2;217;169;92"      # block device
+    "cd=38;2;217;169;92"      # char device
+    "su=38;2;242;232;213;48;2;176;87;74"
+    "sg=38;2;242;232;213;48;2;138;112;80"
+    "tw=38;2;30;26;22;48;2;201;160;107"
+    "ow=38;2;201;160;107"
+    "st=38;2;221;208;186"
+    # archives
+    "*.tar=38;2;199;109;94" "*.tgz=38;2;199;109;94" "*.zip=38;2;199;109;94"
+    "*.gz=38;2;199;109;94" "*.xz=38;2;199;109;94" "*.zst=38;2;199;109;94"
+    "*.bz2=38;2;199;109;94" "*.7z=38;2;199;109;94" "*.rar=38;2;199;109;94"
+    # media
+    "*.jpg=38;2;163;117;122" "*.jpeg=38;2;163;117;122" "*.png=38;2;163;117;122"
+    "*.gif=38;2;163;117;122" "*.webp=38;2;163;117;122" "*.svg=38;2;163;117;122"
+    "*.mp4=38;2;187;143;147" "*.mkv=38;2;187;143;147" "*.webm=38;2;187;143;147"
+    "*.mp3=38;2;163;186;178" "*.flac=38;2;163;186;178" "*.wav=38;2;163;186;178"
+    # docs
+    "*.pdf=38;2;217;169;92" "*.md=38;2;232;220;198" "*.txt=38;2;221;208;186"
+  ];
+
   home.packages = [ helium claude ];
 
   # Desktop entry so Helium shows in fuzzel and as the default browser.
@@ -241,7 +272,9 @@ in
 
     iconTheme = {
       name = "Papirus-Dark";
-      package = pkgs.papirus-icon-theme;
+      # Papirus folders are blue by default; the override recolours them.
+      # Other warm options: brown, paleorange, orange, yellow.
+      package = pkgs.papirus-icon-theme.override { color = "palebrown"; };
     };
   };
   dconf.settings."org/gnome/desktop/interface" = {
@@ -336,9 +369,11 @@ in
     EOF
   '';
 
-  # Claude Code's own themes hardcode colours; "dark-ansi" makes it use the
-  # terminal's ANSI palette instead, so it follows ghostty. Merged rather than
-  # symlinked because claude rewrites this file when settings change.
+  # Custom claude theme: `base` inherits the built-in dark theme (readable) and
+  # `overrides` recolours it to Dust. settings.json is merged rather than
+  # symlinked because claude rewrites it when settings change.
+  home.file.".claude/themes/dust.json".source = "${configDir}/claude/dust.json";
+
   home.activation.claudeTheme = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run ${pkgs.python3}/bin/python3 - "${config.home.homeDirectory}/.claude/settings.json" <<'EOF'
     import json, os, sys
@@ -349,7 +384,7 @@ in
             cfg = json.load(f)
     except Exception:
         cfg = {}
-    cfg["theme"] = "dark-ansi"
+    cfg["theme"] = "custom:dust"
     with open(path, "w") as f:
         json.dump(cfg, f, indent=2)
         f.write("\n")
