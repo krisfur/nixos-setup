@@ -20,6 +20,14 @@
     "diffAdded": "rgb(52,60,40)",
     "diffRemoved": "rgb(70,38,33)",
     "diffAddedWord": "rgb(90,104,64)",
-    "diffRemovedWord": "rgb(120,58,50)"
+    "diffRemovedWord": "rgb(120,58,50)",
+
+    "blue": "rgb(201,160,107)",
+    "brightBlue": "rgb(224,184,120)",
+    "indigo": "rgb(201,160,107)",
+    "professionalBlue": "rgb(201,160,107)",
+    "cyan": "rgb(163,186,178)",
+    "brightCyan": "rgb(190,208,200)",
+    "ide": "rgb(163,186,178)"
   }
 }
