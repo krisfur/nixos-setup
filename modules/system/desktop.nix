@@ -14,6 +14,18 @@ let
   '';
 in
 {
+  # Recolour Papirus folders once, globally, so home-manager (useGlobalPkgs)
+  # and the system list share one build. dontFixup because the colour override
+  # forces a local rebuild and fixupPhase walks ~70k icon files for several
+  # minutes — there are no binaries in here to strip or patch.
+  nixpkgs.overlays = [
+    (final: prev: {
+      papirus-icon-theme =
+        (prev.papirus-icon-theme.override { color = "palebrown"; })
+        .overrideAttrs (_: { dontFixup = true; });
+    })
+  ];
+
   # Wayland tiling compositor.
   environment.systemPackages = with pkgs; [
     sway
@@ -34,8 +46,8 @@ in
     xdg-utils
     # Theme + icons referenced by the home-manager configs.
     adw-gtk3
-    # Match the folder recolour in home.nix, or the system copy shadows it.
-    (papirus-icon-theme.override { color = "palebrown"; })
+    # Recoloured by the overlay above.
+    papirus-icon-theme
   ];
 
   # Login: greetd + tuigreet, launching sway.

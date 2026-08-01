@@ -272,9 +272,8 @@ in
 
     iconTheme = {
       name = "Papirus-Dark";
-      # Papirus folders are blue by default; the override recolours them.
-      # Other warm options: brown, paleorange, orange, yellow.
-      package = pkgs.papirus-icon-theme.override { color = "palebrown"; };
+      # Folder colour comes from the overlay in modules/system/desktop.nix.
+      package = pkgs.papirus-icon-theme;
     };
   };
   dconf.settings."org/gnome/desktop/interface" = {
