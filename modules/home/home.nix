@@ -249,6 +249,14 @@ in
     accent-color = "orange";
   };
 
+  # Thunar is GTK3 and falls back to gtk-3.0/settings.ini while the xsettings
+  # channel is unset, but pin it so an xfconf write can't silently override.
+  xfconf.settings.xsettings = {
+    "Net/ThemeName" = "adw-gtk3-dark";
+    "Net/IconThemeName" = "Papirus-Dark";
+    "Gtk/CursorThemeName" = "Bibata-Modern-Classic";
+  };
+
   # EasyEffects 8 is Qt6, not GTK, so it defaults to Breeze and ignores every
   # GTK setting above. Point Qt's platform theme at GTK to pull the same colours.
   qt = {
@@ -325,6 +333,26 @@ in
     cp["UiSettings"]["ColorScheme"] = "Dust"
     with open(path, "w") as f:
         cp.write(f, space_around_delimiters=False)
+    EOF
+  '';
+
+  # Claude Code's own themes hardcode colours; "dark-ansi" makes it use the
+  # terminal's ANSI palette instead, so it follows ghostty. Merged rather than
+  # symlinked because claude rewrites this file when settings change.
+  home.activation.claudeTheme = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run ${pkgs.python3}/bin/python3 - "${config.home.homeDirectory}/.claude/settings.json" <<'EOF'
+    import json, os, sys
+    path = sys.argv[1]
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    try:
+        with open(path) as f:
+            cfg = json.load(f)
+    except Exception:
+        cfg = {}
+    cfg["theme"] = "dark-ansi"
+    with open(path, "w") as f:
+        json.dump(cfg, f, indent=2)
+        f.write("\n")
     EOF
   '';
 
