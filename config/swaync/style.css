@@ -10,16 +10,16 @@
 }
 
 .notification {
-    background: #2e3440;
-    border: 1px solid #88c0d0;
+    background: #1e1a16;
+    border: 1px solid #c9a06b;
     border-radius: 8px;
-    color: #d8dee9;
+    color: #ddd0ba;
     padding: 12px;
 }
 
 /* Critical notifications */
 .notification.critical {
-    border: 1px solid #bf616a;
+    border: 1px solid #b0574a;
 }
 
 /* THE ICON FIX: GTK doesn't use flex, it uses margin/float-like behavior */
@@ -29,25 +29,25 @@
 }
 
 .notification-content .summary {
-    color: #88c0d0;
+    color: #c9a06b;
     font-weight: bold;
     font-size: 16px;
 }
 
 .notification-content .body {
-    color: #d8dee9;
+    color: #ddd0ba;
     font-size: 14px;
 }
 
 /* The Control Center Panel */
 .control-center {
-    background: #2e3440;
-    border: 1px solid #4c566a;
+    background: #1e1a16;
+    border: 1px solid #574c40;
     border-radius: 8px;
 }
 
 .widget-title > label {
-    color: #81a1c1;
+    color: #7b8b96;
     font-size: 1.2rem;
     margin: 10px;
 }

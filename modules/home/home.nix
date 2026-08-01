@@ -2,7 +2,7 @@
 
 let
   configDir = ../../config;
-  wallpaper = "${config.xdg.configHome}/sway/wallpaper.png";
+  wallpaper = "${config.xdg.configHome}/sway/wallpaper.jpg";
   # hyprlock, not swaylock: it waits on password and fingerprint concurrently,
   # which swaylock can't (it collects input first, then runs PAM).
   hyprlockBin = "${pkgs.hyprlock}/bin/hyprlock --grace 0 --no-fade-in";
@@ -163,26 +163,20 @@ in
   # --- GTK / icon theming (replaces the sway `exec gsettings ...` lines) ---
   gtk = {
     enable = true;
+    # nordic was dropped from nixpkgs (it needed gtk-engine-murrine, a GTK2
+    # engine, which went unmaintained). adw-gtk3 gives GTK3 apps the libadwaita
+    # look; GTK4 apps get it natively, hence gtk4.theme = null. The warm accent
+    # comes from the dconf accent-color below rather than a theme variant.
     theme = {
-      name = "Nordic";
-      package = pkgs.nordic;
+      name = "adw-gtk3-dark";
+      package = pkgs.adw-gtk3;
     };
-    # Set to `null` to let libadwaita apps render natively instead. GTK4
-    # ignores gtk-theme-name, so home-manager writes a gtk.css that @imports
-    # the theme; extraCss below is appended after, so it wins.
-    gtk4.theme = config.gtk.theme;
+    gtk4.theme = null;
 
-    # Restore keyboard focus rings: Nordic's GTK4 sheet sets a universal
-    # `* { outline-width: 0px; }`, leaving dialogs with no visible selection.
-    # `*` has zero specificity, so any real selector beats it. Colour is Nord
-    # frost #88c0d0, matching the sway focus border. GTK4 only — the GTK3 sheet
-    # has no such rule and GTK3 has no :focus-visible anyway.
-    #
-    # Scoped to actual controls on purpose. A bare `:focus-visible` also matches
-    # the toplevel and ghostty's terminal widget, which fills the window — that
-    # drew a 2px ring in the same colour as the sway border just inside it, so
-    # the window looked like it randomly grew a thicker border while typing
-    # (`:focus-visible` is keyboard-only, hence the intermittence).
+    # Focus rings, scoped to real controls. A bare `:focus-visible` also matches
+    # ghostty's terminal widget, which fills the window — that drew a ring in
+    # the same colour as the sway border just inside it, so the window looked
+    # like it randomly grew a thicker border while typing.
     gtk4.extraCss = ''
       button:focus-visible,
       entry:focus-visible,
@@ -194,7 +188,7 @@ in
       dropdown:focus-visible,
       tab:focus-visible,
       row:focus-visible {
-        outline-color: #88c0d0;
+        outline-color: #c9a06b;
         outline-style: solid;
         outline-width: 2px;
         outline-offset: -2px;
@@ -205,7 +199,7 @@ in
       .response-area button:focus-visible,
       .dialog-action-area button:focus-visible,
       dialog button:focus-visible {
-        box-shadow: inset 0 0 0 2px rgba(136, 192, 208, 0.5);
+        box-shadow: inset 0 0 0 2px rgba(201, 160, 107, 0.5);
       }
     '';
 
@@ -214,7 +208,10 @@ in
       package = pkgs.papirus-icon-theme;
     };
   };
-  dconf.settings."org/gnome/desktop/interface".color-scheme = "prefer-dark";
+  dconf.settings."org/gnome/desktop/interface" = {
+    color-scheme = "prefer-dark";
+    accent-color = "orange";
+  };
 
   # Speaker DSP: the P14s speakers are tuned for Windows' Dolby driver and
   # sound tinny without it, so apply a community ThinkPad EQ preset. Pinned to
@@ -270,11 +267,11 @@ in
   '';
 
   # Modern cursor (the default is the chunky X11 fallback). sway also picks it
-  # up via `seat seat0 xcursor_theme Bibata-Modern-Ice` in config/sway/config.
+  # up via `seat seat0 xcursor_theme Bibata-Modern-Classic` in config/sway/config.
   home.pointerCursor = {
     enable = true;
     gtk.enable = true;
-    name = "Bibata-Modern-Ice";
+    name = "Bibata-Modern-Classic";
     package = pkgs.bibata-cursors;
     size = 24;
   };
@@ -335,7 +332,7 @@ in
           # repainting the input field, which re-evaluates its placeholder only
           # on redraw, so it sets how fast the fingerprint icon appears.
           text = cmd[update:500] date +"%H:%M"
-          color = rgb(eceff4)
+          color = rgb(f2e8d5)
           font_size = 72
           font_family = JetBrainsMono Nerd Font
           position = 0, 150
@@ -346,7 +343,7 @@ in
       label {
           monitor =
           text = cmd[update:30000] date +"%A, %e %B"
-          color = rgb(d8dee9)
+          color = rgb(ddd0ba)
           font_size = 16
           font_family = JetBrainsMono Nerd Font
           position = 0, 80
@@ -359,11 +356,11 @@ in
           size = 200, 50
           rounding = 12
           outline_thickness = 1
-          inner_color = rgb(3b4252)
-          outer_color = rgb(4c566a)
-          check_color = rgb(88c0d0)
-          fail_color = rgb(bf616a)
-          font_color = rgb(eceff4)
+          inner_color = rgb(2b2520)
+          outer_color = rgb(574c40)
+          check_color = rgb(c9a06b)
+          fail_color = rgb(b0574a)
+          font_color = rgb(f2e8d5)
           font_family = JetBrainsMono Nerd Font
           dots_size = 0.25
           dots_spacing = 0.3
@@ -392,7 +389,7 @@ in
 
     # sway compositor
     "sway/config".source = "${configDir}/sway/config";
-    "sway/wallpaper.png".source = "${configDir}/wallpaper/wallpaper.png";
+    "sway/wallpaper.jpg".source = "${configDir}/wallpaper/wallpaper.jpg";
     # $lockcmd and the lid bindswitch point here so they get the same guards.
     "sway/lock.sh" = {
       source = lockCmd;

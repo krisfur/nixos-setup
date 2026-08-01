@@ -33,7 +33,7 @@ in
     libnotify
     xdg-utils
     # Theme + icons referenced by the home-manager configs.
-    nordic
+    adw-gtk3
     papirus-icon-theme
   ];
 

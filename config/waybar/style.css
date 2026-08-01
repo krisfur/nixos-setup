@@ -16,36 +16,36 @@ window#waybar {
 #custom-power-profile,
 #custom-power,
 #tray {
-    background: #3b4252;
-    color: #eceff4;
+    background: #2b2520;
+    color: #f2e8d5;
     padding: 2px 12px;
     margin: 5px 3px;
     border-radius: 8px;
-    border: 1px solid #4c566a;
+    border: 1px solid #574c40;
 }
 
 #workspaces button {
     padding: 0 6px;
     margin: 0;
-    color: #d8dee9;
+    color: #ddd0ba;
     background: transparent;
     border: none;
 }
 
 #workspaces button.focused {
-    background: #88c0d0;
-    color: #2e3440;
+    background: #c9a06b;
+    color: #1e1a16;
     border-radius: 6px;
 }
 
 #workspaces button:hover {
-    background: #4c566a;
-    color: #eceff4;
+    background: #574c40;
+    color: #f2e8d5;
 }
 
 #custom-power:hover {
-    background: #bf616a;
-    color: #eceff4;
+    background: #b0574a;
+    color: #f2e8d5;
 }
 
 #custom-power {
@@ -58,38 +58,38 @@ window#waybar {
 }
 
 #custom-power-profile.power-saver {
-    color: #a3be8c;
-    border-color: #8fbc8f;
+    color: #8a9464;
+    border-color: #8a9464;
 }
 
 #custom-power-profile.performance {
-    color: #bf616a;
-    border-color: #d08770;
+    color: #b0574a;
+    border-color: #c9825e;
 }
 
 /* Status Colors */
 #pulseaudio.muted {
-    background-color: #bf616a;
+    background-color: #b0574a;
 }
 
 #network.disconnected {
-    background-color: #d08770;
+    background-color: #c9825e;
 }
 
 #custom-notification.dnd-none,
 #custom-notification.dnd-notification,
 #custom-notification.dnd-inhibited-none,
 #custom-notification.dnd-inhibited-notification {
-    color: #bf616a;
+    color: #b0574a;
 }
 
 #battery.warning {
-    background-color: #ebcb8b; /* Yellow */
-    color: #2e3440;
+    background-color: #d9a95c; /* Yellow */
+    color: #1e1a16;
 }
 
 #battery.critical:not(.charging) {
-    background-color: #bf616a;
+    background-color: #b0574a;
     animation-name: blink;
     animation-duration: 0.5s;
     animation-timing-function: linear;
@@ -99,7 +99,7 @@ window#waybar {
 
 @keyframes blink {
     to {
-        background-color: #eceff4;
-        color: #2e3440;
+        background-color: #f2e8d5;
+        color: #1e1a16;
     }
 }

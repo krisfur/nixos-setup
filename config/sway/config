@@ -35,7 +35,7 @@ input type:touchpad {
 }
 
 # Cursor theme for the whole seat (replaces the labwc `environment` XCURSOR_*).
-seat seat0 xcursor_theme Bibata-Modern-Ice 24
+seat seat0 xcursor_theme Bibata-Modern-Classic 24
 
 # Whatever the pointer is over takes keyboard focus - the reason for moving off
 # labwc, where a colored focus border couldn't land on GTK (ghostty) windows.
@@ -46,11 +46,11 @@ gaps outer 4
 default_border pixel 1
 default_floating_border pixel 1
 
-# Nord focus borders. Order: border bg text indicator child_border.
-client.focused          #88c0d0 #88c0d0 #2e3440 #88c0d0 #88c0d0
-client.focused_inactive #5e81ac #5e81ac #eceff4 #5e81ac #5e81ac
-client.unfocused        #4c566a #4c566a #d8dee9 #4c566a #4c566a
-client.urgent           #bf616a #bf616a #eceff4 #bf616a #bf616a
+# Focus borders. Order: border bg text indicator child_border.
+client.focused          #c9a06b #c9a06b #1e1a16 #c9a06b #c9a06b
+client.focused_inactive #8a7050 #8a7050 #f2e8d5 #8a7050 #8a7050
+client.unfocused        #574c40 #574c40 #ddd0ba #574c40 #574c40
+client.urgent           #b0574a #b0574a #f2e8d5 #b0574a #b0574a
 
 # --- Launchers / window management ---
 bindsym $mod+Return exec $terminal
