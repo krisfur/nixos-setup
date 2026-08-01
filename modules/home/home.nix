@@ -186,6 +186,21 @@ in
       @define-color accent_bg_color #c9a06b;
       @define-color accent_fg_color #1e1a16;
       @define-color accent_color #c9a06b;
+
+      /* adw-gtk3's menu greys are neutral, which reads cold next to the warm
+         palette everywhere else. Restyle directly — the @define-colors above
+         don't reach menu backgrounds. */
+      menu, .menu, .context-menu, popover, popover.background,
+      popover > contents, .csd popup decoration {
+        background-color: #2b2520;
+        color: #ddd0ba;
+        border: 1px solid #574c40;
+      }
+      menu menuitem:hover, .menu menuitem:hover,
+      popover listview row:selected, popover modelbutton:hover {
+        background-color: #c9a06b;
+        color: #1e1a16;
+      }
     '';
 
     # Focus rings, scoped to real controls. A bare `:focus-visible` also matches
@@ -215,6 +230,12 @@ in
       .dialog-action-area button:focus-visible,
       dialog button:focus-visible {
         box-shadow: inset 0 0 0 2px rgba(201, 160, 107, 0.5);
+      }
+
+      /* ghostty's OSC 9;4 progress bar takes libadwaita's accent, which stays
+         blue regardless of the accent-color key below. Set it directly. */
+      progressbar > trough > progress {
+        background-color: #c9a06b;
       }
     '';
 
@@ -283,6 +304,25 @@ in
         cp["StreamOutputs"] = {}
     cp["StreamOutputs"]["useDefaultOutputDevice"] = "false"
     cp["StreamOutputs"]["outputDevice"] = "alsa_output.pci-0000_c4_00.6.HiFi__Speaker__sink"
+    with open(path, "w") as f:
+        cp.write(f, space_around_delimiters=False)
+    EOF
+  '';
+
+  # EasyEffects picks a KDE colour scheme by name, defaulting to BreezeDark,
+  # and that overrides the Qt platform theme. Note this is ~/.config/easyeffectsrc,
+  # a different file from the db/ one above. Dust.colors is the palette below.
+  home.activation.easyeffectsColorScheme = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run ${pkgs.python3}/bin/python3 - "${config.xdg.configHome}/easyeffectsrc" <<'EOF'
+    import configparser, os, sys
+    path = sys.argv[1]
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    cp = configparser.ConfigParser()
+    cp.optionxform = str
+    cp.read(path)
+    if "UiSettings" not in cp:
+        cp["UiSettings"] = {}
+    cp["UiSettings"]["ColorScheme"] = "Dust"
     with open(path, "w") as f:
         cp.write(f, space_around_delimiters=False)
     EOF
@@ -437,4 +477,9 @@ in
   # to ~/.local/share/easyeffects at startup and would fight home-manager.
   xdg.dataFile."easyeffects/output/thinkpad-unsuck.json".source =
     "${configDir}/easyeffects/thinkpad-unsuck.json";
+
+  # KDE colour scheme in the Dust palette, for Qt apps that pick a scheme by
+  # name rather than following the platform theme (EasyEffects).
+  xdg.dataFile."color-schemes/Dust.colors".source =
+    "${configDir}/color-schemes/Dust.colors";
 }
