@@ -45,7 +45,7 @@
             "bypass": false,
             "dithering": "None",
             "gain-boost": false,
-            "input-gain": 0.0,
+            "input-gain": 6.0,
             "input-to-link": 0.0,
             "input-to-sidechain": 0.0,
             "link-to-input": 0.0,
