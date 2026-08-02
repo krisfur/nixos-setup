@@ -48,13 +48,16 @@ window#waybar {
     color: #f2e8d5;
 }
 
-#custom-power {
-    padding: 2px 14px 2px 10px;
+/* These glyphs have no right side bearing, so their ink sits 75-120 units (of
+   1000) right of the cell centre. Right padding exceeds left by twice that. */
+#custom-notification {
+    padding: 2px 12px 2px 10px;
 }
 
-/* The Material Design glyphs carry 832 units of ink in a 600-unit cell with a
-   negative right bearing, so they sit ~1.5px right of centre. Extra padding on
-   the right re-centres them optically (same trick as #custom-power above). */
+#custom-power {
+    padding: 2px 13px 2px 10px;
+}
+
 #custom-power-profile {
     min-width: 24px;
     padding: 2px 13px 2px 10px;
