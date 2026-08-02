@@ -109,11 +109,30 @@
   # NM otherwise defers to the driver default, which leaves this off.
   networking.networkmanager.wifi.powersave = true;
 
+  # 16 GB minus the 4 GB UMA carve-out leaves ~11.8 GB, and games that want 16 GB
+  # then have nothing to reclaim but page cache — including their own mapped
+  # pages, which thrashes back off the NVMe. zstd zram gives the anon pages
+  # somewhere to go at roughly 3:1.
+  zramSwap = {
+    enable = true;
+    algorithm = "zstd";
+    memoryPercent = 50;
+  };
+
   boot.kernel.sysctl = {
     # Per-core lockup-detector timer; only useful when debugging kernel hangs.
     "kernel.nmi_watchdog" = 0;
     # Fewer, larger writeback flushes so the NVMe reaches deep APST states.
     "vm.dirty_writeback_centisecs" = 1500;
+    # ...but bound how much can pile up between them. The ratio defaults are
+    # 10/20% of RAM, so a 15s interval let >1 GB accumulate and the flush stalled
+    # everything behind it — heard as periodic audio dropouts under load.
+    "vm.dirty_background_bytes" = 64 * 1024 * 1024;
+    "vm.dirty_bytes" = 256 * 1024 * 1024;
+    # zram is RAM: swapping to it beats evicting page cache, and it has no seek
+    # cost so the default 8-page readahead is wasted work.
+    "vm.swappiness" = 180;
+    "vm.page-cluster" = 0;
   };
 
   users.users.kfurman = {

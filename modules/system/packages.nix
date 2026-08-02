@@ -17,6 +17,9 @@
 
   # Steam runs in an FHS env and enables 32-bit graphics libs automatically.
   programs.steam.enable = true;
+  # Proton-GE carries media codec and anti-cheat fixes that land in upstream
+  # Proton much later. Selected per-game in the compatibility settings.
+  programs.steam.extraCompatPackages = [ pkgs.proton-ge-bin ];
 
   environment.systemPackages = with pkgs; [
     ghostty            # terminal
@@ -37,6 +40,7 @@
     btop               # TUI system monitor (waybar on-click)
     xarchiver          # archive GUI for thunar
     gamescope          # gaming compositor
+    mangohud           # in-game frame/CPU/GPU/VRAM overlay: `MANGOHUD=1 %command%`
     fastfetch          # system info (config vendored via home-manager)
 
     # Wayland/Qt integration + MTP for phones over gvfs.
