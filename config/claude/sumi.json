@@ -1,0 +1,67 @@
+{
+  "name": "Sumi",
+  "base": "dark",
+  "overrides": {
+    "claude": "#c67153",
+    "claudeShimmer": "#d98f74",
+    "text": "#c8c7c3",
+    "inverseText": "#1a1a19",
+    "inactive": "#8f8e8a",
+    "inactiveShimmer": "#c0c0be",
+    "subtle": "#44423e",
+    "suggestion": "#c67153",
+    "permission": "#c67153",
+    "permissionShimmer": "#d98f74",
+    "remember": "#c09aa8",
+
+    "success": "#8fa07c",
+    "error": "#dd6155",
+    "warning": "#cfa961",
+    "warningShimmer": "#e0c084",
+    "merged": "#a8808f",
+
+    "promptBorder": "#44423e",
+    "promptBorderShimmer": "#b4512d",
+    "planMode": "#a4bbb7",
+    "autoAccept": "#a8808f",
+    "bashBorder": "#b4512d",
+    "ide": "#a4bbb7",
+    "fastMode": "#cfa961",
+    "fastModeShimmer": "#e0c084",
+
+    "diffAdded": "#262d20",
+    "diffRemoved": "#3a201d",
+    "diffAddedDimmed": "#1f2319",
+    "diffRemovedDimmed": "#2a1917",
+    "diffAddedWord": "#47523a",
+    "diffRemovedWord": "#6e2f28",
+
+    "userMessageBackground": "#232321",
+    "userMessageBackgroundHover": "#2f2f2d",
+    "bashMessageBackgroundColor": "#1f1f1e",
+    "memoryBackgroundColor": "#232321",
+    "selectionBg": "#392c26",
+
+    "rate_limit_fill": "#c67153",
+    "rate_limit_empty": "#2f2f2d",
+    "briefLabelYou": "#8f8e8a",
+    "briefLabelClaude": "#c67153",
+
+    "red_FOR_SUBAGENTS_ONLY": "#dd6155",
+    "blue_FOR_SUBAGENTS_ONLY": "#9aa9b4",
+    "green_FOR_SUBAGENTS_ONLY": "#8fa07c",
+    "yellow_FOR_SUBAGENTS_ONLY": "#cfa961",
+    "purple_FOR_SUBAGENTS_ONLY": "#a8808f",
+    "orange_FOR_SUBAGENTS_ONLY": "#be7747",
+    "pink_FOR_SUBAGENTS_ONLY": "#c09aa8",
+    "cyan_FOR_SUBAGENTS_ONLY": "#a4bbb7",
+
+    "rainbow_red": "#dd6155",
+    "rainbow_orange": "#be7747",
+    "rainbow_yellow": "#cfa961",
+    "rainbow_green": "#8fa07c",
+    "rainbow_blue": "#9aa9b4",
+    "rainbow_indigo": "#b4512d",
+    "rainbow_violet": "#a8808f"
+  }
+}

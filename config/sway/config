@@ -47,10 +47,10 @@ default_border pixel 1
 default_floating_border pixel 1
 
 # Focus borders. Order: border bg text indicator child_border.
-client.focused          #c9a06b #c9a06b #1e1a16 #c9a06b #c9a06b
-client.focused_inactive #8a7050 #8a7050 #f2e8d5 #8a7050 #8a7050
-client.unfocused        #574c40 #574c40 #ddd0ba #574c40 #574c40
-client.urgent           #b0574a #b0574a #f2e8d5 #b0574a #b0574a
+client.focused          #c67153 #c67153 #1a1a19 #c67153 #c67153
+client.focused_inactive #b4512d #b4512d #e1e0da #b4512d #b4512d
+client.unfocused        #44423e #44423e #c0c0be #44423e #44423e
+client.urgent           #dd6155 #dd6155 #1a1a19 #dd6155 #dd6155
 
 # --- Launchers / window management ---
 bindsym $mod+Return exec $terminal

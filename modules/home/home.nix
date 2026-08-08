@@ -121,35 +121,35 @@ in
 
   programs.home-manager.enable = true;
 
-  # ls colours come from LS_COLORS, not the ANSI palette, so directories can be
-  # warm without repurposing an ANSI slot. Truecolor values, Dust palette.
+  # ls colours come from LS_COLORS, not the ANSI palette, so directories can take
+  # the accent without repurposing an ANSI slot. Truecolor values, Sumi palette.
   home.sessionVariables.LS_COLORS = lib.concatStringsSep ":" [
     "rs=0"
-    "di=1;38;2;201;160;107"   # directories - sand, bold
-    "ln=38;2;163;186;178"     # symlinks - muted teal
-    "or=38;2;176;87;74"       # broken symlink - red
-    "mi=38;2;176;87;74"       # missing target
-    "ex=38;2;138;148;100"     # executables - olive
-    "pi=38;2;138;112;80"      # fifo
-    "so=38;2;163;117;122"     # socket
-    "bd=38;2;217;169;92"      # block device
-    "cd=38;2;217;169;92"      # char device
-    "su=38;2;242;232;213;48;2;176;87;74"
-    "sg=38;2;242;232;213;48;2;138;112;80"
-    "tw=38;2;30;26;22;48;2;201;160;107"
-    "ow=38;2;201;160;107"
-    "st=38;2;221;208;186"
+    "di=1;38;2;198;113;83"    # directories - terracotta, bold
+    "ln=38;2;164;187;183"     # symlinks - muted teal
+    "or=38;2;221;97;85"       # broken symlink - red
+    "mi=38;2;221;97;85"       # missing target
+    "ex=38;2;143;160;124"     # executables - sage
+    "pi=38;2;180;81;45"       # fifo
+    "so=38;2;192;154;168"     # socket
+    "bd=38;2;154;169;180"     # block device
+    "cd=38;2;154;169;180"     # char device
+    "su=38;2;225;224;218;48;2;156;64;30"
+    "sg=38;2;225;224;218;48;2;93;93;90"
+    "tw=38;2;26;26;25;48;2;198;113;83"
+    "ow=38;2;198;113;83"
+    "st=38;2;192;192;190"
     # archives
-    "*.tar=38;2;199;109;94" "*.tgz=38;2;199;109;94" "*.zip=38;2;199;109;94"
-    "*.gz=38;2;199;109;94" "*.xz=38;2;199;109;94" "*.zst=38;2;199;109;94"
-    "*.bz2=38;2;199;109;94" "*.7z=38;2;199;109;94" "*.rar=38;2;199;109;94"
+    "*.tar=38;2;207;169;97" "*.tgz=38;2;207;169;97" "*.zip=38;2;207;169;97"
+    "*.gz=38;2;207;169;97" "*.xz=38;2;207;169;97" "*.zst=38;2;207;169;97"
+    "*.bz2=38;2;207;169;97" "*.7z=38;2;207;169;97" "*.rar=38;2;207;169;97"
     # media
-    "*.jpg=38;2;163;117;122" "*.jpeg=38;2;163;117;122" "*.png=38;2;163;117;122"
-    "*.gif=38;2;163;117;122" "*.webp=38;2;163;117;122" "*.svg=38;2;163;117;122"
-    "*.mp4=38;2;187;143;147" "*.mkv=38;2;187;143;147" "*.webm=38;2;187;143;147"
-    "*.mp3=38;2;163;186;178" "*.flac=38;2;163;186;178" "*.wav=38;2;163;186;178"
+    "*.jpg=38;2;192;154;168" "*.jpeg=38;2;192;154;168" "*.png=38;2;192;154;168"
+    "*.gif=38;2;192;154;168" "*.webp=38;2;192;154;168" "*.svg=38;2;192;154;168"
+    "*.mp4=38;2;207;174;186" "*.mkv=38;2;207;174;186" "*.webm=38;2;207;174;186"
+    "*.mp3=38;2;164;187;183" "*.flac=38;2;164;187;183" "*.wav=38;2;164;187;183"
     # docs
-    "*.pdf=38;2;217;169;92" "*.md=38;2;232;220;198" "*.txt=38;2;221;208;186"
+    "*.pdf=38;2;207;169;97" "*.md=38;2;225;224;218" "*.txt=38;2;192;192;190"
   ];
 
   home.packages = [ helium claude ];
@@ -212,25 +212,25 @@ in
     # GTK3 has no accent-color setting, so adw-gtk3's blue selection shows
     # through on GTK3 menus (nm-applet). Override the named colours instead.
     gtk3.extraCss = ''
-      @define-color theme_selected_bg_color #c9a06b;
-      @define-color theme_selected_fg_color #1e1a16;
-      @define-color accent_bg_color #c9a06b;
-      @define-color accent_fg_color #1e1a16;
-      @define-color accent_color #c9a06b;
+      @define-color theme_selected_bg_color #c67153;
+      @define-color theme_selected_fg_color #1a1a19;
+      @define-color accent_bg_color #c67153;
+      @define-color accent_fg_color #1a1a19;
+      @define-color accent_color #c67153;
 
-      /* adw-gtk3's menu greys are neutral, which reads cold next to the warm
-         palette everywhere else. Restyle directly — the @define-colors above
-         don't reach menu backgrounds. */
+      /* adw-gtk3's menu greys are cooler and lighter than the Sumi surfaces.
+         Restyle directly — the @define-colors above don't reach menu
+         backgrounds. */
       menu, .menu, .context-menu, popover, popover.background,
       popover > contents, .csd popup decoration {
-        background-color: #2b2520;
-        color: #ddd0ba;
-        border: 1px solid #574c40;
+        background-color: #232321;
+        color: #c0c0be;
+        border: 1px solid #44423e;
       }
       menu menuitem:hover, .menu menuitem:hover,
       popover listview row:selected, popover modelbutton:hover {
-        background-color: #c9a06b;
-        color: #1e1a16;
+        background-color: #c67153;
+        color: #1a1a19;
       }
     '';
 
@@ -249,7 +249,7 @@ in
       dropdown:focus-visible,
       tab:focus-visible,
       row:focus-visible {
-        outline-color: #c9a06b;
+        outline-color: #c67153;
         outline-style: solid;
         outline-width: 2px;
         outline-offset: -2px;
@@ -260,13 +260,13 @@ in
       .response-area button:focus-visible,
       .dialog-action-area button:focus-visible,
       dialog button:focus-visible {
-        box-shadow: inset 0 0 0 2px rgba(201, 160, 107, 0.5);
+        box-shadow: inset 0 0 0 2px rgba(198, 113, 83, 0.5);
       }
 
       /* ghostty's OSC 9;4 progress bar takes libadwaita's accent, which stays
          blue regardless of the accent-color key below. Set it directly. */
       progressbar > trough > progress {
-        background-color: #c9a06b;
+        background-color: #c67153;
       }
     '';
 
@@ -351,7 +351,7 @@ in
 
   # EasyEffects picks a KDE colour scheme by name, defaulting to BreezeDark,
   # and that overrides the Qt platform theme. Note this is ~/.config/easyeffectsrc,
-  # a different file from the db/ one above. Dust.colors is the palette below.
+  # a different file from the db/ one above. Sumi.colors is the palette below.
   home.activation.easyeffectsColorScheme = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run ${pkgs.python3}/bin/python3 - "${config.xdg.configHome}/easyeffectsrc" <<'EOF'
     import configparser, os, sys
@@ -362,16 +362,16 @@ in
     cp.read(path)
     if "UiSettings" not in cp:
         cp["UiSettings"] = {}
-    cp["UiSettings"]["ColorScheme"] = "Dust"
+    cp["UiSettings"]["ColorScheme"] = "Sumi"
     with open(path, "w") as f:
         cp.write(f, space_around_delimiters=False)
     EOF
   '';
 
   # Custom claude theme: `base` inherits the built-in dark theme (readable) and
-  # `overrides` recolours it to Dust. settings.json is merged rather than
+  # `overrides` recolours it to Sumi. settings.json is merged rather than
   # symlinked because claude rewrites it when settings change.
-  home.file.".claude/themes/dust.json".source = "${configDir}/claude/dust.json";
+  home.file.".claude/themes/sumi.json".source = "${configDir}/claude/sumi.json";
 
   home.activation.claudeTheme = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run ${pkgs.python3}/bin/python3 - "${config.home.homeDirectory}/.claude/settings.json" <<'EOF'
@@ -383,7 +383,7 @@ in
             cfg = json.load(f)
     except Exception:
         cfg = {}
-    cfg["theme"] = "custom:dust"
+    cfg["theme"] = "custom:sumi"
     with open(path, "w") as f:
         json.dump(cfg, f, indent=2)
         f.write("\n")
@@ -456,7 +456,7 @@ in
           # repainting the input field, which re-evaluates its placeholder only
           # on redraw, so it sets how fast the fingerprint icon appears.
           text = cmd[update:500] date +"%H:%M"
-          color = rgb(f2e8d5)
+          color = rgb(e1e0da)
           font_size = 72
           font_family = JetBrainsMono Nerd Font
           position = 0, 150
@@ -467,7 +467,7 @@ in
       label {
           monitor =
           text = cmd[update:30000] date +"%A, %e %B"
-          color = rgb(ddd0ba)
+          color = rgb(c0c0be)
           font_size = 16
           font_family = JetBrainsMono Nerd Font
           position = 0, 80
@@ -480,11 +480,11 @@ in
           size = 200, 50
           rounding = 12
           outline_thickness = 1
-          inner_color = rgb(2b2520)
-          outer_color = rgb(574c40)
-          check_color = rgb(c9a06b)
-          fail_color = rgb(b0574a)
-          font_color = rgb(f2e8d5)
+          inner_color = rgb(232321)
+          outer_color = rgb(44423e)
+          check_color = rgb(c67153)
+          fail_color = rgb(dd6155)
+          font_color = rgb(e1e0da)
           font_family = JetBrainsMono Nerd Font
           dots_size = 0.25
           dots_spacing = 0.3
@@ -540,8 +540,8 @@ in
   xdg.dataFile."easyeffects/output/thinkpad-unsuck.json".source =
     "${configDir}/easyeffects/thinkpad-unsuck.json";
 
-  # KDE colour scheme in the Dust palette, for Qt apps that pick a scheme by
+  # KDE colour scheme in the Sumi palette, for Qt apps that pick a scheme by
   # name rather than following the platform theme (EasyEffects).
-  xdg.dataFile."color-schemes/Dust.colors".source =
-    "${configDir}/color-schemes/Dust.colors";
+  xdg.dataFile."color-schemes/Sumi.colors".source =
+    "${configDir}/color-schemes/Sumi.colors";
 }

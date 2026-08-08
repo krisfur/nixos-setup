@@ -1,4 +1,4 @@
-/* All-around Nord Theme */
+/* Sumi palette. */
 * {
     font-family: "JetBrainsMono Nerd Font";
     background-clip: border-box;
@@ -10,16 +10,16 @@
 }
 
 .notification {
-    background: #1e1a16;
-    border: 1px solid #c9a06b;
+    background: #1a1a19;
+    border: 1px solid #c67153;
     border-radius: 8px;
-    color: #ddd0ba;
+    color: #c0c0be;
     padding: 12px;
 }
 
 /* Critical notifications */
 .notification.critical {
-    border: 1px solid #b0574a;
+    border: 1px solid #dd6155;
 }
 
 /* THE ICON FIX: GTK doesn't use flex, it uses margin/float-like behavior */
@@ -29,25 +29,25 @@
 }
 
 .notification-content .summary {
-    color: #c9a06b;
+    color: #c67153;
     font-weight: bold;
     font-size: 16px;
 }
 
 .notification-content .body {
-    color: #ddd0ba;
+    color: #c0c0be;
     font-size: 14px;
 }
 
 /* The Control Center Panel */
 .control-center {
-    background: #1e1a16;
-    border: 1px solid #574c40;
+    background: #1a1a19;
+    border: 1px solid #44423e;
     border-radius: 8px;
 }
 
 .widget-title > label {
-    color: #7b8b96;
+    color: #9aa9b4;
     font-size: 1.2rem;
     margin: 10px;
 }
