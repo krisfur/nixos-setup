@@ -16,36 +16,36 @@ window#waybar {
 #custom-power-profile,
 #custom-power,
 #tray {
-    background: #232321;
-    color: #e1e0da;
+    background: #2b2520;
+    color: #f2e8d5;
     padding: 2px 12px;
     margin: 5px 3px;
     border-radius: 8px;
-    border: 1px solid #44423e;
+    border: 1px solid #574c40;
 }
 
 #workspaces button {
     padding: 0 6px;
     margin: 0;
-    color: #c0c0be;
+    color: #ddd0ba;
     background: transparent;
     border: none;
 }
 
 #workspaces button.focused {
-    background: #c67153;
-    color: #1a1a19;
+    background: #c9a06b;
+    color: #1e1a16;
     border-radius: 6px;
 }
 
 #workspaces button:hover {
-    background: #44423e;
-    color: #e1e0da;
+    background: #574c40;
+    color: #f2e8d5;
 }
 
 #custom-power:hover {
-    background: #a8322b;
-    color: #e1e0da;
+    background: #b0574a;
+    color: #f2e8d5;
 }
 
 /* These glyphs have no right side bearing, so their ink sits 75-120 units (of
@@ -64,38 +64,38 @@ window#waybar {
 }
 
 #custom-power-profile.power-saver {
-    color: #8fa07c;
-    border-color: #8fa07c;
+    color: #8a9464;
+    border-color: #8a9464;
 }
 
 #custom-power-profile.performance {
-    color: #dd6155;
-    border-color: #c4413a;
+    color: #b0574a;
+    border-color: #c9825e;
 }
 
 /* Status Colors */
 #pulseaudio.muted {
-    background-color: #a8322b;
+    background-color: #b0574a;
 }
 
 #network.disconnected {
-    background-color: #9c401e;
+    background-color: #c9825e;
 }
 
 #custom-notification.dnd-none,
 #custom-notification.dnd-notification,
 #custom-notification.dnd-inhibited-none,
 #custom-notification.dnd-inhibited-notification {
-    color: #dd6155;
+    color: #b0574a;
 }
 
 #battery.warning {
-    background-color: #cfa961; /* Yellow */
-    color: #1a1a19;
+    background-color: #d9a95c; /* Yellow */
+    color: #1e1a16;
 }
 
 #battery.critical:not(.charging) {
-    background-color: #a8322b;
+    background-color: #b0574a;
     animation-name: blink;
     animation-duration: 0.5s;
     animation-timing-function: linear;
@@ -105,7 +105,7 @@ window#waybar {
 
 @keyframes blink {
     to {
-        background-color: #e1e0da;
-        color: #1a1a19;
+        background-color: #f2e8d5;
+        color: #1e1a16;
     }
 }
