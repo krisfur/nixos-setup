@@ -532,6 +532,9 @@ in
 
     # neovim (flake input -> github.com/krisfur/neovim-config)
     "nvim/init.lua".source = "${inputs.neovim-config}/init.lua";
+
+    # mpv (one line: stops it fighting the sway floating rule over height)
+    "mpv/mpv.conf".source = "${configDir}/mpv/mpv.conf";
   };
 
   # Preset from sebastian-de/easyeffects-thinkpad-unsuck. Must live in XDG
