@@ -109,6 +109,64 @@
   # NM otherwise defers to the driver default, which leaves this off.
   networking.networkmanager.wifi.powersave = true;
 
+  # Prefer 6 GHz wherever it exists as its own SSID.
+  #
+  # NM has no band preference to set: 802-11-wireless.band only takes "a"/"bg"
+  # (no 6 GHz value) and locks a profile to one band rather than ranking them,
+  # and NetworkManager.conf has no global equivalent. When an AP puts 6 GHz on
+  # a separate SSID, preferring the band means preferring that profile, so the
+  # rule here is: any saved profile currently on air above 5900 MHz gets
+  # autoconnect-priority 10, which outranks everything left at the default 0.
+  # No SSID is named, so this follows to any network. It only ever raises a
+  # priority, never lowers one, so a hand-set value is never stomped.
+  #
+  # It also runs on resume because ath11k re-inits its firmware there and the
+  # 6 GHz half of the channel list only returns with the regulatory push ~4.5s
+  # later ("Channel list changed: 6 GHz was enabled"). NM's own post-resume
+  # scan often starts just before that, so the 6 GHz BSS is missing from the
+  # results, it settles on whatever 2.4/5 GHz profile it can see, and does not
+  # reconsider until the next periodic scan about two minutes on. Rescanning
+  # until a 6 GHz BSS shows up collapses that to a few seconds.
+  systemd.services.wifi-prefer-6ghz = {
+    description = "Rank saved wifi profiles seen on 6 GHz above the rest";
+    after = [ "NetworkManager.service" "suspend.target" ];
+    wantedBy = [ "multi-user.target" "suspend.target" ];
+    path = with pkgs; [ networkmanager gawk gnugrep coreutils ];
+    serviceConfig = {
+      Type = "oneshot";
+      TimeoutStartSec = "90s";
+    };
+    script = ''
+      seen=$(mktemp)
+      trap 'rm -f "$seen"' EXIT
+
+      # Retry: on resume the first scans run before the band is back.
+      for i in 1 2 3 4 5 6; do
+        if nmcli device wifi rescan >/dev/null 2>&1; then
+          sleep 3
+          # FREQ first so the frequency is the field that cannot contain a
+          # colon; nmcli escapes colons inside the SSID, hence the gsub.
+          nmcli -t -f FREQ,SSID device wifi list \
+            | awk -F: '$1 + 0 > 5900 { sub(/^[^:]*:/, ""); gsub(/\\:/, ":"); if (length($0)) print }' \
+            | sort -u > "$seen"
+          if [ -s "$seen" ]; then break; fi
+        fi
+        sleep 5
+      done
+
+      nmcli -t -f UUID,TYPE connection show \
+        | awk -F: '$2 == "802-11-wireless" { print $1 }' \
+        | while read -r uuid; do
+            ssid=$(nmcli -g 802-11-wireless.ssid connection show "$uuid") || continue
+            grep -qxF "$ssid" "$seen" || continue
+            prio=$(nmcli -g connection.autoconnect-priority connection show "$uuid")
+            if [ "$prio" -lt 10 ] 2>/dev/null; then
+              nmcli connection modify "$uuid" connection.autoconnect-priority 10
+            fi
+          done
+    '';
+  };
+
   # 16 GB minus the 4 GB UMA carve-out leaves ~11.8 GB, and games that want 16 GB
   # then have nothing to reclaim but page cache — including their own mapped
   # pages, which thrashes back off the NVMe. zstd zram gives the anon pages
