@@ -30,6 +30,7 @@
     iw                 # wifi diagnostics: `iw reg get`, `iw phy` channel/band list
     hyprlock           # lock screen (parallel password + fingerprint auth)
     discord            # chat
+    proton-authenticator # TOTP manager (ships its own desktop entry + icons)
     mpv                # video
     ffmpeg             # video/audio transcoding CLI
     imv                # image viewer
