@@ -3,13 +3,6 @@
 let
   configDir = ../../config;
 
-  # Which host runs the speaker DSP. EasyEffects and the PipeWire filter-chain
-  # drive the same LV2 plugins and both register as smart filters on the speaker
-  # sink, so exactly one may be on or the audio gets processed twice. The
-  # filter-chain is ~190 MB lighter for a null-tested identical result; flip this
-  # to true only to get the GUI back for tweaking the preset.
-  useEasyEffects = false;
-
   wallpaper = "${config.xdg.configHome}/sway/wallpaper.jpg";
   # hyprlock, not swaylock: it waits on password and fingerprint concurrently,
   # which swaylock can't (it collects input first, then runs PAM).
@@ -63,9 +56,9 @@ let
     ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd \
       SSH_AUTH_SOCK GNOME_KEYRING_CONTROL DISPLAY WAYLAND_DISPLAY 2>/dev/null || true
 
-    # Starts user units wanted by graphical-session.target (easyeffects). That
-    # target refuses manual starts, hence sway-session.target which BindsTo it.
-    # Must run after the env push so those units see WAYLAND_DISPLAY.
+    # Starts user units wanted by graphical-session.target (swaync, portals).
+    # That target refuses manual starts, hence sway-session.target which BindsTo
+    # it. Must run after the env push so those units see WAYLAND_DISPLAY.
     ${pkgs.systemd}/bin/systemctl --user start sway-session.target
 
     ${pkgs.swaybg}/bin/swaybg -i ${wallpaper} -m fill &
@@ -297,39 +290,11 @@ in
     "Gtk/CursorThemeName" = "Bibata-Modern-Classic";
   };
 
-  # EasyEffects 8 is Qt6, not GTK, so it defaults to Breeze and ignores every
-  # GTK setting above. Point Qt's platform theme at GTK to pull the same colours.
+  # Qt apps default to Breeze and ignore every GTK setting above. Point Qt's
+  # platform theme at GTK so they pull the same colours.
   qt = {
     enable = true;
     platformTheme.name = "gtk3";
-  };
-
-  # Speaker DSP: the P14s speakers are tuned for Windows' Dolby driver and
-  # sound tinny without it, so apply a community ThinkPad EQ preset. Pinned to
-  # the internal speaker sink below, so headphones and DACs play untouched.
-  services.easyeffects = {
-    enable = useEasyEffects;
-    preset = "thinkpad-unsuck";
-  };
-
-  # EasyEffects ignores --load-preset on its own service start (handled before
-  # the pipeline is ready), leaving an empty chain. Re-issue over IPC once it's
-  # up and verify via PipeWire: ee_soe_* nodes exist only when the chain is
-  # actually populated.
-  # mkIf wraps the whole attribute: gating only ExecStartPost would still emit an
-  # easyeffects.service with no ExecStart when the PipeWire host is selected.
-  systemd.user.services = lib.mkIf useEasyEffects {
-    easyeffects.Service.ExecStartPost =
-      "${pkgs.writeShellScript "easyeffects-load-preset" ''
-        sleep 2
-        for _ in $(${pkgs.coreutils}/bin/seq 1 30); do
-          ${pkgs.easyeffects}/bin/easyeffects -l thinkpad-unsuck >/dev/null 2>&1
-          ${pkgs.pipewire}/bin/pw-dump 2>/dev/null | ${pkgs.gnugrep}/bin/grep -q ee_soe_bass_enhancer && exit 0
-          sleep 1
-        done
-        echo "easyeffects: preset thinkpad-unsuck failed to load" >&2
-        exit 1
-      ''}";
   };
 
   # sway never activates graphical-session.target and that target refuses
@@ -340,45 +305,6 @@ in
       BindsTo = [ "graphical-session.target" ];
     };
   };
-
-  # EasyEffects 8 rewrites its KConfig at runtime, so the speaker pin can't be
-  # a read-only store symlink. Enforce the two keys on every activation:
-  # useDefaultOutputDevice=false stops it following the default sink.
-  home.activation.easyeffectsPinSpeakers = lib.mkIf useEasyEffects (lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run ${pkgs.python3}/bin/python3 - "${config.xdg.configHome}/easyeffects/db/easyeffectsrc" <<'EOF'
-    import configparser, os, sys
-    path = sys.argv[1]
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    cp = configparser.ConfigParser()
-    cp.optionxform = str
-    cp.read(path)
-    if "StreamOutputs" not in cp:
-        cp["StreamOutputs"] = {}
-    cp["StreamOutputs"]["useDefaultOutputDevice"] = "false"
-    cp["StreamOutputs"]["outputDevice"] = "alsa_output.pci-0000_c4_00.6.HiFi__Speaker__sink"
-    with open(path, "w") as f:
-        cp.write(f, space_around_delimiters=False)
-    EOF
-  '');
-
-  # EasyEffects picks a KDE colour scheme by name, defaulting to BreezeDark,
-  # and that overrides the Qt platform theme. Note this is ~/.config/easyeffectsrc,
-  # a different file from the db/ one above. Dust.colors is the palette below.
-  home.activation.easyeffectsColorScheme = lib.mkIf useEasyEffects (lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run ${pkgs.python3}/bin/python3 - "${config.xdg.configHome}/easyeffectsrc" <<'EOF'
-    import configparser, os, sys
-    path = sys.argv[1]
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    cp = configparser.ConfigParser()
-    cp.optionxform = str
-    cp.read(path)
-    if "UiSettings" not in cp:
-        cp["UiSettings"] = {}
-    cp["UiSettings"]["ColorScheme"] = "Dust"
-    with open(path, "w") as f:
-        cp.write(f, space_around_delimiters=False)
-    EOF
-  '');
 
   # Custom claude theme: `base` inherits the built-in dark theme (readable) and
   # `overrides` recolours it to Dust. settings.json is merged rather than
@@ -549,23 +475,17 @@ in
     "mpv/mpv.conf".source = "${configDir}/mpv/mpv.conf";
   };
 
-  # Preset from sebastian-de/easyeffects-thinkpad-unsuck. Must live in XDG
-  # data, not config: EasyEffects 8 moves anything under ~/.config/easyeffects
-  # to ~/.local/share/easyeffects at startup and would fight home-manager.
-  # Kept even when EasyEffects is off: it is the source the PipeWire graph below
-  # was generated from, and the fallback host still needs it.
-  xdg.dataFile."easyeffects/output/thinkpad-unsuck.json".source =
-    "${configDir}/easyeffects/thinkpad-unsuck.json";
-
-  # The same chain as a PipeWire filter-chain: identical LV2 plugins with
-  # identical settings, minus the ~190 MB Qt process. Loaded into the running
-  # pipewire daemon, so it costs no extra process. LV2_PATH for the daemon comes
-  # from services.pipewire.extraLv2Packages in desktop.nix.
-  xdg.configFile."pipewire/pipewire.conf.d/99-thinkpad-unsuck.conf" =
-    lib.mkIf (!useEasyEffects) { source = "${configDir}/pipewire/thinkpad-unsuck.conf"; };
+  # Speaker DSP: the P14s speakers are tuned for Windows' Dolby driver and sound
+  # tinny without it. A PipeWire filter-chain hosting the LSP and Calf LV2
+  # plugins, pinned to the internal speaker sink so headphones and DACs play
+  # untouched. Loaded into the running pipewire daemon, so it costs no extra
+  # process; LV2_PATH comes from services.pipewire.extraLv2Packages in
+  # desktop.nix.
+  xdg.configFile."pipewire/pipewire.conf.d/99-thinkpad-unsuck.conf".source =
+    "${configDir}/pipewire/thinkpad-unsuck.conf";
 
   # KDE colour scheme in the Dust palette, for Qt apps that pick a scheme by
-  # name rather than following the platform theme (EasyEffects).
+  # name rather than following the platform theme.
   xdg.dataFile."color-schemes/Dust.colors".source =
     "${configDir}/color-schemes/Dust.colors";
 }
