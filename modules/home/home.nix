@@ -2,6 +2,14 @@
 
 let
   configDir = ../../config;
+
+  # Which host runs the speaker DSP. EasyEffects and the PipeWire filter-chain
+  # drive the same LV2 plugins and both register as smart filters on the speaker
+  # sink, so exactly one may be on or the audio gets processed twice. The
+  # filter-chain is ~190 MB lighter for a null-tested identical result; flip this
+  # to true only to get the GUI back for tweaking the preset.
+  useEasyEffects = false;
+
   wallpaper = "${config.xdg.configHome}/sway/wallpaper.jpg";
   # hyprlock, not swaylock: it waits on password and fingerprint concurrently,
   # which swaylock can't (it collects input first, then runs PAM).
@@ -300,7 +308,7 @@ in
   # sound tinny without it, so apply a community ThinkPad EQ preset. Pinned to
   # the internal speaker sink below, so headphones and DACs play untouched.
   services.easyeffects = {
-    enable = true;
+    enable = useEasyEffects;
     preset = "thinkpad-unsuck";
   };
 
@@ -308,17 +316,21 @@ in
   # the pipeline is ready), leaving an empty chain. Re-issue over IPC once it's
   # up and verify via PipeWire: ee_soe_* nodes exist only when the chain is
   # actually populated.
-  systemd.user.services.easyeffects.Service.ExecStartPost =
-    "${pkgs.writeShellScript "easyeffects-load-preset" ''
-      sleep 2
-      for _ in $(${pkgs.coreutils}/bin/seq 1 30); do
-        ${pkgs.easyeffects}/bin/easyeffects -l thinkpad-unsuck >/dev/null 2>&1
-        ${pkgs.pipewire}/bin/pw-dump 2>/dev/null | ${pkgs.gnugrep}/bin/grep -q ee_soe_bass_enhancer && exit 0
-        sleep 1
-      done
-      echo "easyeffects: preset thinkpad-unsuck failed to load" >&2
-      exit 1
-    ''}";
+  # mkIf wraps the whole attribute: gating only ExecStartPost would still emit an
+  # easyeffects.service with no ExecStart when the PipeWire host is selected.
+  systemd.user.services = lib.mkIf useEasyEffects {
+    easyeffects.Service.ExecStartPost =
+      "${pkgs.writeShellScript "easyeffects-load-preset" ''
+        sleep 2
+        for _ in $(${pkgs.coreutils}/bin/seq 1 30); do
+          ${pkgs.easyeffects}/bin/easyeffects -l thinkpad-unsuck >/dev/null 2>&1
+          ${pkgs.pipewire}/bin/pw-dump 2>/dev/null | ${pkgs.gnugrep}/bin/grep -q ee_soe_bass_enhancer && exit 0
+          sleep 1
+        done
+        echo "easyeffects: preset thinkpad-unsuck failed to load" >&2
+        exit 1
+      ''}";
+  };
 
   # sway never activates graphical-session.target and that target refuses
   # manual starts, so bind a session-scoped one to it (started by autostart).
@@ -332,7 +344,7 @@ in
   # EasyEffects 8 rewrites its KConfig at runtime, so the speaker pin can't be
   # a read-only store symlink. Enforce the two keys on every activation:
   # useDefaultOutputDevice=false stops it following the default sink.
-  home.activation.easyeffectsPinSpeakers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.easyeffectsPinSpeakers = lib.mkIf useEasyEffects (lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run ${pkgs.python3}/bin/python3 - "${config.xdg.configHome}/easyeffects/db/easyeffectsrc" <<'EOF'
     import configparser, os, sys
     path = sys.argv[1]
@@ -347,12 +359,12 @@ in
     with open(path, "w") as f:
         cp.write(f, space_around_delimiters=False)
     EOF
-  '';
+  '');
 
   # EasyEffects picks a KDE colour scheme by name, defaulting to BreezeDark,
   # and that overrides the Qt platform theme. Note this is ~/.config/easyeffectsrc,
   # a different file from the db/ one above. Dust.colors is the palette below.
-  home.activation.easyeffectsColorScheme = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.easyeffectsColorScheme = lib.mkIf useEasyEffects (lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run ${pkgs.python3}/bin/python3 - "${config.xdg.configHome}/easyeffectsrc" <<'EOF'
     import configparser, os, sys
     path = sys.argv[1]
@@ -366,7 +378,7 @@ in
     with open(path, "w") as f:
         cp.write(f, space_around_delimiters=False)
     EOF
-  '';
+  '');
 
   # Custom claude theme: `base` inherits the built-in dark theme (readable) and
   # `overrides` recolours it to Dust. settings.json is merged rather than
@@ -540,8 +552,17 @@ in
   # Preset from sebastian-de/easyeffects-thinkpad-unsuck. Must live in XDG
   # data, not config: EasyEffects 8 moves anything under ~/.config/easyeffects
   # to ~/.local/share/easyeffects at startup and would fight home-manager.
+  # Kept even when EasyEffects is off: it is the source the PipeWire graph below
+  # was generated from, and the fallback host still needs it.
   xdg.dataFile."easyeffects/output/thinkpad-unsuck.json".source =
     "${configDir}/easyeffects/thinkpad-unsuck.json";
+
+  # The same chain as a PipeWire filter-chain: identical LV2 plugins with
+  # identical settings, minus the ~190 MB Qt process. Loaded into the running
+  # pipewire daemon, so it costs no extra process. LV2_PATH for the daemon comes
+  # from services.pipewire.extraLv2Packages in desktop.nix.
+  xdg.configFile."pipewire/pipewire.conf.d/99-thinkpad-unsuck.conf" =
+    lib.mkIf (!useEasyEffects) { source = "${configDir}/pipewire/thinkpad-unsuck.conf"; };
 
   # KDE colour scheme in the Dust palette, for Qt apps that pick a scheme by
   # name rather than following the platform theme (EasyEffects).

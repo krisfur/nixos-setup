@@ -67,6 +67,14 @@ in
     alsa.enable = true;
     pulse.enable = true;
     jack.enable = true;
+
+    # Speaker DSP plugins for the filter-chain in home.nix. This only puts them
+    # on the daemon's LV2_PATH; the graph itself is user config. lilv finds
+    # plugins by LV2_PATH alone, so without this the chain fails to load.
+    extraLv2Packages = [
+      pkgs.lsp-plugins
+      pkgs.calf
+    ];
   };
 
   # Wayland portals: gtk default, wlr for screencast/screenshot.
