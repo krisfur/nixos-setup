@@ -59,6 +59,13 @@ in
     };
   };
 
+  # greetd sets services.displayManager.enable, which switches on the whole
+  # graphical-desktop module, and that turns speechd on by mkDefault for screen
+  # readers. Its unit runs `speech-dispatcher -t 0`, so the first Chromium app
+  # that enumerates TTS voices pins the daemon plus a module process per synth
+  # for the rest of the boot. No screen reader here, so drop it.
+  services.speechd.enable = false;
+
   # Audio via PipeWire.
   services.pulseaudio.enable = false;
   security.rtkit.enable = true;
