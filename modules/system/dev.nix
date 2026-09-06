@@ -9,7 +9,7 @@
     # clangd / clang-format / clang-tidy for editor LSP. The clang *compiler*
     # is omitted: it ships bin/cc + bin/c++ and would collide with gcc16. Use
     # a dev shell if you need an alternate toolchain.
-    clang-tools
+    llvmPackages_latest.clang-tools
 
     # C/C++ build stack.
     cmake
