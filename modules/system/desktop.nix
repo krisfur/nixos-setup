@@ -53,8 +53,8 @@ in
     # xfce4-mime-helper. programs.thunar pulls in neither, so without both the
     # menu entries fail silently. The ghostty helper they resolve to is in
     # home.nix.
-    xfce.exo
-    xfce.xfce4-settings
+    xfce4-exo
+    xfce4-settings
   ];
 
   # Login: greetd + tuigreet, launching sway.
