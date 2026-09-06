@@ -114,6 +114,30 @@ let
     fi
     exec "$bin" "$@"
   '';
+
+  # Codex CLI (ChatGPT). Same reasoning as claude above: a read-only store binary
+  # can't self-update. The official installer drops a static musl build into
+  # ~/.local/bin, so unlike claude it needs no nix-ld loader, and `codex update`
+  # then replaces it in place.
+  #
+  # ~/.local/bin is prepended to PATH so the installer's add_to_path() sees it
+  # already there and skips appending a PATH block to a shell profile: its
+  # pick_profile() has no fish case and would write a ~/.profile fish never reads.
+  codex = pkgs.writeShellScriptBin "codex" ''
+    set -euo pipefail
+    bin="$HOME/.local/bin/codex"
+    if [ ! -x "$bin" ]; then
+      echo "Fetching latest Codex CLI (native, self-updating)..." >&2
+      mkdir -p "$HOME/.local/bin"
+      export PATH="$HOME/.local/bin:${lib.makeBinPath [
+        pkgs.curl pkgs.coreutils pkgs.gnused pkgs.gnugrep pkgs.gawk
+        pkgs.findutils pkgs.gnutar pkgs.gzip pkgs.util-linux pkgs.bash
+      ]}:$PATH"
+      export CODEX_NON_INTERACTIVE=1
+      curl -fsSL https://chatgpt.com/codex/install.sh | sh
+    fi
+    exec "$bin" "$@"
+  '';
 in
 {
   home.username = "kfurman";
@@ -153,7 +177,7 @@ in
     "*.pdf=38;2;217;169;92" "*.md=38;2;232;220;198" "*.txt=38;2;221;208;186"
   ];
 
-  home.packages = [ helium claude ];
+  home.packages = [ helium claude codex ];
 
   # Desktop entry so Helium shows in fuzzel and as the default browser.
   xdg.desktopEntries.helium = {
@@ -329,6 +353,12 @@ in
   # `overrides` recolours it to Dust. settings.json is merged rather than
   # symlinked because claude rewrites it when settings change.
   home.file.".claude/themes/dust.json".source = "${configDir}/claude/dust.json";
+
+  # Codex's global instructions. Deliberately NOT named AGENTS.md in the repo:
+  # codex concatenates every AGENTS.md from the git root down to the cwd, so a
+  # file by that name here would be read as instructions *for this repo* by any
+  # agent working in it, which these are not - they are the global defaults.
+  home.file.".codex/AGENTS.md".source = "${configDir}/codex/instructions.md";
 
   home.activation.claudeTheme = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run ${pkgs.python3}/bin/python3 - "${config.home.homeDirectory}/.claude/settings.json" <<'EOF'
