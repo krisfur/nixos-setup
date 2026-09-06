@@ -4,6 +4,8 @@ Declarative NixOS config: sway (tiling Wayland WM), Nord theme, Waybar, greetd l
 
 Neovim config is pinned as a flake input, shared with non-nix machines machines.
 
+Edit Codex's global instructions in [config/codex/instructions.md](config/codex/instructions.md). Home Manager installs this as `~/.codex/AGENTS.md`; rebuild and start a new Codex session to apply changes.
+
 ![screenshot](./screenshot.png)
 
 ## Install (from the minimal NixOS installer)

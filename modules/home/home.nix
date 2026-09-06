@@ -177,7 +177,8 @@ in
     "*.pdf=38;2;217;169;92" "*.md=38;2;232;220;198" "*.txt=38;2;221;208;186"
   ];
 
-  home.packages = [ helium claude codex ];
+  # Codex discovers its Linux sandbox helper as bwrap on PATH.
+  home.packages = [ helium claude codex pkgs.bubblewrap ];
 
   # Desktop entry so Helium shows in fuzzel and as the default browser.
   xdg.desktopEntries.helium = {
