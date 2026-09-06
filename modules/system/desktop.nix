@@ -48,6 +48,13 @@ in
     adw-gtk3
     # Recoloured by the overlay above.
     papirus-icon-theme
+    # Thunar's Open Terminal Here / Run In Terminal shell out to a hardcoded
+    # `exo-open --launch TerminalEmulator`, which in Xfce 4.20 delegates to
+    # xfce4-mime-helper. programs.thunar pulls in neither, so without both the
+    # menu entries fail silently. The ghostty helper they resolve to is in
+    # home.nix.
+    xfce.exo
+    xfce.xfce4-settings
   ];
 
   # Login: greetd + tuigreet, launching sway.

@@ -164,18 +164,37 @@ in
     categories = [ "Network" "WebBrowser" ];
     mimeType = [ "text/html" "x-scheme-handler/http" "x-scheme-handler/https" ];
   };
-  xdg.mimeApps = {
-    enable = true;
-    defaultApplications = {
-      "x-scheme-handler/http" = "helium.desktop";
-      "x-scheme-handler/https" = "helium.desktop";
-      "text/html" = "helium.desktop";
-    };
-  };
+  # NOT xdg.mimeApps: that symlinks mimeapps.list into the store read-only, and
+  # every "open with -> set as default" writes through GIO to that same file, so
+  # Thunar (and any other file manager) fails with EROFS. Seed a real file
+  # instead and enforce only the keys we care about, leaving whatever the file
+  # manager adds intact.
+  home.activation.mimeDefaults = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run ${pkgs.python3}/bin/python3 - "${config.xdg.configHome}/mimeapps.list" <<'EOF'
+    import configparser, os, sys
+    path = sys.argv[1]
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    # a leftover store symlink from a previous xdg.mimeApps generation is
+    # read-only; drop it before writing
+    if os.path.islink(path):
+        os.unlink(path)
+    cp = configparser.ConfigParser()
+    cp.optionxform = str
+    cp.read(path)
+    if "Default Applications" not in cp:
+        cp["Default Applications"] = {}
+    for mime in ("text/html", "x-scheme-handler/http", "x-scheme-handler/https"):
+        cp["Default Applications"][mime] = "helium.desktop"
+    with open(path, "w") as f:
+        cp.write(f, space_around_delimiters=False)
+    EOF
+  '';
 
   # Shadows the stock desktop entry, keeping its X-TerminalArg* keys. The
   # single-instance setting lives in config/ghostty/config, not on the exec
-  # line, so every launch path agrees.
+  # line, so every launch path agrees - except the Thunar terminal helper, which
+  # must override it to keep its working directory (see the .desktop in
+  # config/xfce4/helpers).
   xdg.desktopEntries."com.mitchellh.ghostty" = {
     name = "Ghostty";
     genericName = "Terminal Emulator";
@@ -483,6 +502,14 @@ in
   # desktop.nix.
   xdg.configFile."pipewire/pipewire.conf.d/99-thinkpad-unsuck.conf".source =
     "${configDir}/pipewire/thinkpad-unsuck.conf";
+
+  # Thunar resolves Open Terminal Here through exo-open -> xfce4-mime-helper,
+  # which reads this pair: helpers.rc names the helper, the .desktop defines how
+  # to run it. Both packages come from desktop.nix.
+  xdg.dataFile."xfce4/helpers/ghostty.desktop".source =
+    "${configDir}/xfce4/helpers/ghostty.desktop";
+
+  xdg.configFile."xfce4/helpers.rc".text = "TerminalEmulator=ghostty\n";
 
   # KDE colour scheme in the Dust palette, for Qt apps that pick a scheme by
   # name rather than following the platform theme.

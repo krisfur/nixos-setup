@@ -1,0 +1,22 @@
+# Xfce "preferred applications" helper for ghostty.
+#
+# Thunar hardcodes `exo-open --launch TerminalEmulator` for Open Terminal Here
+# and Run In Terminal; there is no xfconf setting for it. Xfce 4.20 moved the
+# helper lookup out of exo into xfce4-mime-helper (in xfce4-settings), which
+# resolves this file via helpers.rc. Upstream ships 56 of these - alacritty,
+# kitty, xterm - but none for ghostty, hence our own.
+#
+# %B expands to the first entry of X-XFCE-Binaries found on PATH.
+# --gtk-single-instance=false is required: forwarding a launch to an already
+# running ghostty drops the working directory, so Open Terminal Here would open
+# in the wrong folder. Costs one process per invocation, only on this path.
+[Desktop Entry]
+Version=1.0
+Type=X-XFCE-Helper
+Name=Ghostty
+Icon=com.mitchellh.ghostty
+StartupNotify=false
+X-XFCE-Binaries=ghostty;
+X-XFCE-Category=TerminalEmulator
+X-XFCE-Commands=%B --gtk-single-instance=false;
+X-XFCE-CommandsWithParameter=%B --gtk-single-instance=false -e %s;
