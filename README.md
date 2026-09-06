@@ -133,12 +133,7 @@ sudo nixos-rebuild switch --flake '/etc/nixos-setup#nixos'
 
 Commit the changed `flake.lock` afterward so the new versions are pinned/shared. 
 
-`claude-code` is the exception: it's not in Nix (the read-only store breaks its
-self-updater and nixpkgs trails upstream). A wrapper in `modules/home/home.nix`
-(same pattern as the Helium browser) runs Anthropic's official installer on
-first launch, dropping a self-updating native binary into `~/.local/bin` (run
-via `nix-ld`). It self-updates in place after that — nothing to run by hand, and
-`sudo nixos-rebuild switch` remains the only command you invoke.
+Codex and Helium use writable downloads managed by wrappers in `modules/home/home.nix`, so their application versions are separate from `flake.lock`. Codex installs on first launch into `~/.local/bin`; use `codex update` to update it. Its instructions and permission defaults are managed through Home Manager.
 
 To reclaim disk from old generations:
 
@@ -172,36 +167,59 @@ then:
 sudo nixos-rebuild switch --flake '/etc/nixos-setup#nixos'
 ```
 
-Find the exact attribute name with `nix search nixpkgs helix` or <https://search.nixos.org/packages>. Most apps are just the lowercase name.
+## Find package names
 
-## nix-shell
+Search by name or description with `nix search`, or browse [NixOS package search](https://search.nixos.org/packages) with the unstable channel selected:
 
-Sometimes you need an additonal dependency for a project and you don't want to add it globaly. 
+```bash
+nix search nixpkgs helix
+nix search nixpkgs 'raylib'
+```
 
-For that in the project root create a simple `shell.nix` file like:
+A result such as `legacyPackages.x86_64-linux.helix` means the attribute is `helix`: use `nixpkgs#helix` in `nix shell`, or `helix` in a `with pkgs; [ ... ]` package list. Keep any nested attribute path, such as `python3Packages.requests`. Package attributes and executable names can differ: the `helix` package provides `hx`.
+
+## Temporary tools with nix shell
+
+Use `nix shell` to try tools without adding them to the system configuration. No rebuild or sudo is needed:
+
+```bash
+nix shell nixpkgs#helix nixpkgs#jq --command fish
+hx
+exit
+```
+
+This starts Fish with the selected tools on PATH; `exit` returns to the original shell. Downloads remain cached in the Nix store until garbage collection, but nothing is added to your persistent package list. This is a temporary environment, not a security sandbox.
+
+For a single command:
+
+```bash
+nix shell nixpkgs#helix --command hx README.md
+```
+
+`nixpkgs` here resolves through the Nix flake registry and can differ from this repository's input. To use this repository's locked input, run from its root with an existing `flake.lock`:
+
+```bash
+nix shell --inputs-from . nixpkgs#helix --command fish
+```
+
+## Project dependencies with nix-shell
+
+`nix shell` makes executables available. For a project's compiler, libraries, and build environment, use a `shell.nix` with `nix-shell`, or `nix develop` when the project provides a flake dev shell.
+
+For example, create `shell.nix` in the project root:
 
 ```nix
 { pkgs ? import <nixpkgs> {} }:
 
 pkgs.mkShell {
-  buildInputs = with pkgs; [
-    odin
-    raylib
-  ];
+  packages = with pkgs; [ odin pkg-config ];
+  buildInputs = with pkgs; [ raylib ];
 }
 ```
 
-source it with:
+Enter it with `nix-shell` and leave with `exit`. It starts a Bash subshell, not a file to source into your existing shell. The `<nixpkgs>` lookup uses your configured Nix search path, not this repository's flake lock; use a pinned project flake when reproducible dependency versions matter.
 
-```bash
-nix-shell
-```
-
-and when done exit with:
-
-```bash
-exit
-```
+See the official [nix shell reference](https://nix.dev/manual/nix/stable/command-ref/new-cli/nix3-shell) and [nix search reference](https://nix.dev/manual/nix/stable/command-ref/new-cli/nix3-search).
 
 ## C++26
 

@@ -45,8 +45,6 @@
     lazygit
     jq
     cloc
-    # claude-code is deliberately not from nixpkgs — see the wrapper in
-    # modules/home/home.nix for why.
 
     # Neovim language servers + formatters. The nvim config doesn't use Mason,
     # so every server and conform formatter must be on PATH (it shells out by

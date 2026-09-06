@@ -99,26 +99,8 @@ let
       "$@"
   '';
 
-  # Claude Code. Not from nixpkgs: the read-only store breaks its self-updater
-  # and pnpm's global prefix hits EROFS. This wrapper runs Anthropic's official
-  # installer on first launch, dropping a self-updating native ELF into
-  # ~/.local/bin so `claude update` works. Dynamically linked — nix-ld (dev.nix)
-  # provides its loader. PATH is pinned rather than assumed.
-  claude = pkgs.writeShellScriptBin "claude" ''
-    set -euo pipefail
-    bin="$HOME/.local/bin/claude"
-    if [ ! -x "$bin" ]; then
-      echo "Fetching latest Claude Code (native, self-updating)..." >&2
-      export PATH="${lib.makeBinPath [ pkgs.curl pkgs.coreutils pkgs.jq pkgs.gnused pkgs.gnugrep pkgs.bash ]}:$PATH"
-      curl -fsSL https://claude.ai/install.sh | bash
-    fi
-    exec "$bin" "$@"
-  '';
-
-  # Codex CLI (ChatGPT). Same reasoning as claude above: a read-only store binary
-  # can't self-update. The official installer drops a static musl build into
-  # ~/.local/bin, so unlike claude it needs no nix-ld loader, and `codex update`
-  # then replaces it in place.
+  # Codex uses a writable native install so `codex update` works.
+  # The official installer provides a static musl binary.
   #
   # ~/.local/bin is prepended to PATH so the installer's add_to_path() sees it
   # already there and skips appending a PATH block to a shell profile: its
@@ -178,7 +160,7 @@ in
   ];
 
   # Codex discovers its Linux sandbox helper as bwrap on PATH.
-  home.packages = [ helium claude codex pkgs.bubblewrap ];
+  home.packages = [ helium codex pkgs.bubblewrap ];
 
   # Desktop entry so Helium shows in fuzzel and as the default browser.
   xdg.desktopEntries.helium = {
@@ -350,11 +332,6 @@ in
     };
   };
 
-  # Custom claude theme: `base` inherits the built-in dark theme (readable) and
-  # `overrides` recolours it to Dust. settings.json is merged rather than
-  # symlinked because claude rewrites it when settings change.
-  home.file.".claude/themes/dust.json".source = "${configDir}/claude/dust.json";
-
   # Codex's global instructions. Deliberately NOT named AGENTS.md in the repo:
   # codex concatenates every AGENTS.md from the git root down to the cwd, so a
   # file by that name here would be read as instructions *for this repo* by any
@@ -381,23 +358,6 @@ in
     content = tomlkit.dumps(cfg)
     with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:
         f.write(content)
-    EOF
-  '';
-
-  home.activation.claudeTheme = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run ${pkgs.python3}/bin/python3 - "${config.home.homeDirectory}/.claude/settings.json" <<'EOF'
-    import json, os, sys
-    path = sys.argv[1]
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    try:
-        with open(path) as f:
-            cfg = json.load(f)
-    except Exception:
-        cfg = {}
-    cfg["theme"] = "custom:dust"
-    with open(path, "w") as f:
-        json.dump(cfg, f, indent=2)
-        f.write("\n")
     EOF
   '';
 

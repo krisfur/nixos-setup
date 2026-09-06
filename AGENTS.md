@@ -29,7 +29,7 @@ This flake defines `nixosConfigurations.nixos` for `x86_64-linux`, using nixos-u
 ## Configuration conventions
 
 - Add packages to the existing module responsible for them. Prefer Nix-provided dependencies and explicit executable paths in service scripts and wrappers.
-- Helium, Claude Code, and Codex use wrappers in `modules/home/home.nix` to keep their downloaded applications writable for updates. Preserve that behaviour unless the task is to change installation strategy.
+- Helium and Codex use wrappers in `modules/home/home.nix` to keep their downloaded applications writable for updates. Preserve that behaviour unless the task is to change installation strategy.
 - Codex's permission defaults are merged into its writable configuration during Home Manager activation. Preserve unrelated settings, project trust, and authentication state.
 - Do not bump `system.stateVersion` or `home.stateVersion` as part of routine package updates. Do not update flake inputs incidentally; preserve `flake.lock` when present and flag its absence when reproducibility matters.
 - Preserve speaker DSP behaviour when optimising resources. Its PipeWire filter-chain lives in `config/pipewire/thinkpad-unsuck.conf`, with LV2 dependencies supplied by `desktop.nix`.
