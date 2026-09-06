@@ -361,6 +361,29 @@ in
   # agent working in it, which these are not - they are the global defaults.
   home.file.".codex/AGENTS.md".source = "${configDir}/codex/instructions.md";
 
+  # Keep Codex's config writable for project trust and UI settings.
+  # Reapply the managed permission defaults on each activation.
+  home.activation.codexSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run ${pkgs.python3.withPackages (ps: [ ps.tomlkit ])}/bin/python3 - "${config.home.homeDirectory}/.codex/config.toml" <<'EOF'
+    import os, sys
+    import tomlkit
+
+    path = sys.argv[1]
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    try:
+        with open(path) as f:
+            cfg = tomlkit.load(f)
+    except FileNotFoundError:
+        cfg = tomlkit.document()
+    cfg["sandbox_mode"] = "workspace-write"
+    cfg["approval_policy"] = "on-request"
+    cfg["approvals_reviewer"] = "auto_review"
+    content = tomlkit.dumps(cfg)
+    with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:
+        f.write(content)
+    EOF
+  '';
+
   home.activation.claudeTheme = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run ${pkgs.python3}/bin/python3 - "${config.home.homeDirectory}/.claude/settings.json" <<'EOF'
     import json, os, sys
