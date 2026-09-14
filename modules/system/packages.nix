@@ -42,6 +42,7 @@
     xarchiver          # archive GUI for thunar
     gamescope          # gaming compositor
     lutris            # Battle.net and other non-Steam games
+    umu-launcher      # Lutris needs umu-run on PATH to use Proton
     mangohud           # in-game frame/CPU/GPU/VRAM overlay: `MANGOHUD=1 %command%`
     fastfetch          # system info (config vendored via home-manager)
 
