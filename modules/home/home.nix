@@ -162,6 +162,17 @@ in
   # Codex discovers its Linux sandbox helper as bwrap on PATH.
   home.packages = [ helium codex pkgs.bubblewrap ];
 
+  xdg.dataFile."lutris/installers/battlenet.yaml".source =
+    "${configDir}/lutris/battlenet.yaml";
+
+  # Installation is user-initiated; Battle.net and games stay writable.
+  xdg.desktopEntries.install-battlenet = {
+    name = "Install Battle.net";
+    exec = ''${pkgs.lutris}/bin/lutris --install "${config.xdg.dataHome}/lutris/installers/battlenet.yaml"'';
+    icon = "lutris";
+    categories = [ "Game" ];
+  };
+
   # Desktop entry so Helium shows in fuzzel and as the default browser.
   xdg.desktopEntries.helium = {
     name = "Helium";
