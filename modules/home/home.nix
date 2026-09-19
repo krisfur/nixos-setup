@@ -8,40 +8,73 @@ let
   # which swaylock can't (it collects input first, then runs PAM).
   hyprlockBin = "${pkgs.hyprlock}/bin/hyprlock --grace 0 --no-fade-in";
 
-  # Unguarded on purpose: an orphaned hyprlock would otherwise no-op every lock
-  # path. The restart clears a stale fprintd claim that blocks later locks; only
-  # safe after hyprlock exits. Needs the polkit rule in desktop.nix.
-  # Don't try to force a redraw with SIGUSR2: hyprlock installs that handler
-  # some way into startup, and until then the default disposition terminates
-  # the process — the locker dies on launch and the machine sits unlocked.
+  # systemd coalesces lock requests and waits for the compositor's locked event.
   lockCmd = pkgs.writeShellScript "lock" ''
-    ${hyprlockBin}
-    ${pkgs.systemd}/bin/systemctl restart fprintd.service || true
+    ${pkgs.systemd}/bin/systemctl --user import-environment WAYLAND_DISPLAY || exit 1
+    exec ${pkgs.systemd}/bin/systemctl --user start sway-lock.service
   '';
 
-  # swayidle waits for before-sleep to exit and hyprlock has no daemonize flag,
-  # so background it and settle before the machine goes down. Guarded here only:
-  # this is the one path that can fire on top of an existing lock.
-  sleepLockCmd = pkgs.writeShellScript "sleep-lock" ''
-    ${pkgs.procps}/bin/pgrep -x hyprlock >/dev/null && exit 0
-    ${lockCmd} &
-    sleep 1
+  # Hyprlock lacks a readiness fd; this message is emitted by its locked callback.
+  # Do not use SIGUSR2 during startup: its handler may not yet be installed.
+  lockService = pkgs.writeShellScript "sway-lock" ''
+    set -uo pipefail
+    ready=$(${pkgs.coreutils}/bin/mktemp)
+    trap '${pkgs.coreutils}/bin/rm -f "$ready"' EXIT
+    ${hyprlockBin} 2>&1 | while IFS= read -r line; do
+      printf '%s\n' "$line"
+      case "$line" in
+        *"]: onLockLocked called"|*"[LOG] onLockLocked called")
+          ${pkgs.systemd}/bin/systemd-notify --ready && printf 'ready\n' > "$ready"
+          ;;
+      esac
+    done
+    status=$?
+    # Only the locker that acquired the session may reset its fingerprint claim.
+    if [ "$status" -eq 0 ] && [ -s "$ready" ]; then
+      ${pkgs.systemd}/bin/systemctl restart fprintd.service || true
+    fi
+    exit "$status"
+  '';
+
+  # Keep the hidden panel out of the desktop, including on startup and reload.
+  lidCmd = pkgs.writeShellScript "sway-lid" ''
+    set -eu
+    state=$(${pkgs.coreutils}/bin/cat /proc/acpi/button/lid/*/state)
+    case "$state" in
+      *closed*)
+        ${pkgs.sway}/bin/swaymsg 'output eDP-1 disable'
+        if ! ${pkgs.sway}/bin/swaymsg -t get_outputs | ${pkgs.jq}/bin/jq -e \
+          'any(.[]; .name != "eDP-1" and .active)' >/dev/null; then
+          ${lockCmd}
+        fi
+        ;;
+      *open*) ${pkgs.sway}/bin/swaymsg 'output eDP-1 enable' ;;
+      *) echo "Cannot determine lid state: $state" >&2; exit 1 ;;
+    esac
+  '';
+
+  resumeDisplaysCmd = pkgs.writeShellScript "resume-displays" ''
+    ${lidCmd}
+    ${pkgs.sway}/bin/swaymsg 'output * power on'
   '';
 
   # Controller input never reaches the seat, so swayidle counts a gamepad
-  # session as idle and locks mid-game; Steam's reaper process marks a running
-  # game. Backgrounded because swayidle -w waits, and a foreground hyprlock
-  # would block the 1800s suspend timeout below from ever firing.
+  # session as idle; Steam's reaper process marks a running game.
   idleLockCmd = pkgs.writeShellScript "idle-lock" ''
     ${pkgs.procps}/bin/pgrep -f 'SteamLaunch AppId=' >/dev/null && exit 0
-    ${lockCmd} &
+    exec ${lockCmd}
+  '';
+
+  idleDisplaysCmd = pkgs.writeShellScript "idle-displays" ''
+    ${pkgs.procps}/bin/pgrep -f 'SteamLaunch AppId=' >/dev/null && exit 0
+    exec ${pkgs.sway}/bin/swaymsg 'output * power off'
   '';
 
   # Suspend after 30 min idle, with the same skip-while-gaming guard. Media
   # playback holds the Wayland idle inhibitor, which blocks swayidle already.
   idleSuspendCmd = pkgs.writeShellScript "idle-suspend" ''
     ${pkgs.procps}/bin/pgrep -f 'SteamLaunch AppId=' >/dev/null && exit 0
-    exec ${pkgs.systemd}/bin/systemctl suspend
+    exec ${pkgs.systemd}/bin/systemctl --no-block suspend
   '';
 
   # sway execs ~/.config/sway/autostart (see the `exec` line in the sway config).
@@ -69,8 +102,11 @@ let
     ${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1 &
     ${pkgs.swayidle}/bin/swayidle -w \
       timeout 900 '${idleLockCmd}' \
+      timeout 1200 '${idleDisplaysCmd}' resume '${resumeDisplaysCmd}' \
       timeout 1800 '${idleSuspendCmd}' \
-      before-sleep '${sleepLockCmd}' &
+      before-sleep '${lockCmd}' \
+      after-resume '${resumeDisplaysCmd}' \
+      lock '${lockCmd}' &
   '';
 
   # Helium browser. Not in nixpkgs; it's an auto-updating AppImage. The wrapper
@@ -332,6 +368,20 @@ in
     };
   };
 
+  systemd.user.services.sway-lock = {
+    Unit = {
+      Description = "Lock the Sway session";
+      PartOf = [ "graphical-session.target" ];
+      After = [ "graphical-session.target" ];
+    };
+    Service = {
+      Type = "notify";
+      NotifyAccess = "all";
+      ExecStart = lockService;
+      TimeoutStartSec = "30s";
+    };
+  };
+
   # Codex's global instructions. Deliberately NOT named AGENTS.md in the repo:
   # codex concatenates every AGENTS.md from the git root down to the cwd, so a
   # file by that name here would be read as instructions *for this repo* by any
@@ -485,9 +535,13 @@ in
     # sway compositor
     "sway/config".source = "${configDir}/sway/config";
     "sway/wallpaper.jpg".source = "${configDir}/wallpaper/wallpaper.jpg";
-    # $lockcmd and the lid bindswitch point here so they get the same guards.
+    # All lock paths share the supervised locker.
     "sway/lock.sh" = {
       source = lockCmd;
+      executable = true;
+    };
+    "sway/lid.sh" = {
+      source = lidCmd;
       executable = true;
     };
 

@@ -131,8 +131,10 @@ bindsym XF86AudioPause exec playerctl play-pause
 bindsym XF86AudioPlay exec playerctl play-pause
 bindsym XF86AudioPrev exec playerctl previous
 
-# Lock immediately on lid close (swayidle also locks before suspend).
-bindswitch --locked lid:on exec $lockcmd
+# logind handles suspend; the compositor handles the hidden panel.
+bindswitch --reload --locked lid:on exec ~/.config/sway/lid.sh
+bindswitch --reload --locked lid:off exec ~/.config/sway/lid.sh
+exec_always ~/.config/sway/lid.sh
 
 # --- Floating rules for popup-style apps ---
 for_window [app_id="^(imv|mpv|org\.pulseaudio\.pavucontrol)$"] floating enable, resize set width 70 ppt height 70 ppt, move position center
