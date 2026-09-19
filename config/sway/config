@@ -11,6 +11,8 @@ set $browser helium
 set $lockcmd ~/.config/sway/lock.sh
 
 output * scale 1
+# Anchor the internal panel; Sway places automatic outputs to its right.
+output eDP-1 position 0 0
 
 font pango:JetBrainsMono Nerd Font 10
 floating_modifier $mod normal
