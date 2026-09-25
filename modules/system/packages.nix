@@ -41,6 +41,7 @@
     btop               # TUI system monitor (waybar on-click)
     xarchiver          # archive GUI for thunar
     gamescope          # gaming compositor
+    rpcs3              # PlayStation 3 emulator
     mangohud           # in-game frame/CPU/GPU/VRAM overlay: `MANGOHUD=1 %command%`
     fastfetch          # system info (config vendored via home-manager)
 

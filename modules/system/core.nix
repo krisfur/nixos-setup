@@ -35,7 +35,10 @@
 
   # localsend (from the old Sway setup's ufw rules).
   networking.firewall.allowedTCPPorts = [ 53317 ];
-  networking.firewall.allowedUDPPorts = [ 53317 ];
+  networking.firewall.allowedUDPPorts = [
+    53317
+    3658 # RPCS3 / RPCN peer-to-peer netplay.
+  ];
 
   # Pin the global regulatory domain to GB. This does not reach the ath11k
   # card: it is self-managed and keeps its firmware's US domain, logging a
