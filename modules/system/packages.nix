@@ -2,6 +2,31 @@
 
 # General desktop applications.
 
+let
+  # nixpkgs RPCS3 uses RPCN protocol 30; the server requires protocol 32.
+  rpcs3Source = pkgs.fetchurl {
+    url = "https://github.com/RPCS3/rpcs3-binaries-linux/releases/download/build-38eba804f4d2c68e3564d3b78d9d5487f94f4d72/rpcs3-v0.0.42-20053-38eba804_linux64.AppImage";
+    hash = "sha256-iU37J+M0QIY383aJV6Yv7LlPwXcuy7ZjgLJlkjDt7no=";
+  };
+  # Upstream uses DwarFS, which appimageTools.extract does not support.
+  rpcs3Contents = pkgs.runCommand "rpcs3-0.0.42-20053-extracted" {
+    nativeBuildInputs = [ pkgs.dwarfs ];
+  } ''
+    mkdir -p "$out"
+    dwarfsextract -i ${rpcs3Source} -o "$out" --image-offset auto
+  '';
+  rpcs3 = pkgs.appimageTools.wrapAppImage {
+    pname = "rpcs3";
+    version = "0.0.42-20053";
+    src = rpcs3Contents;
+    extraInstallCommands = ''
+      mkdir -p "$out/share"
+      cp -r ${rpcs3Contents}/usr/share/{applications,icons} "$out/share/"
+      substituteInPlace "$out/share/applications/rpcs3.desktop" \
+        --replace-fail "Exec=rpcs3" "Exec=$out/bin/rpcs3"
+    '';
+  };
+in
 {
   # binfmt registration means a chmod +x AppImage in ~/Applications just works,
   # and stays writable so Helium's zsync auto-update keeps functioning.
