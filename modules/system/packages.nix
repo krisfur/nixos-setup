@@ -19,6 +19,10 @@ let
     pname = "rpcs3";
     version = "0.0.42-20053";
     src = rpcs3Contents;
+    extraBuildCommands = ''
+      mkdir -p "$out/usr/share"
+      ln -s ${rpcs3Contents}/usr/share/rpcs3 "$out/usr/share/rpcs3"
+    '';
     extraInstallCommands = ''
       mkdir -p "$out/share"
       cp -r ${rpcs3Contents}/usr/share/{applications,icons} "$out/share/"
