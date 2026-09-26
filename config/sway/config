@@ -36,6 +36,10 @@ input type:touchpad {
     natural_scroll enabled
 }
 
+input type:pointer {
+    natural_scroll enabled
+}
+
 # Cursor theme for the whole seat (replaces the labwc `environment` XCURSOR_*).
 seat seat0 xcursor_theme Bibata-Modern-Classic 24
 
