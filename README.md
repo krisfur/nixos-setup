@@ -4,7 +4,7 @@ Declarative NixOS config: sway (tiling Wayland WM), Nord theme, Waybar, greetd l
 
 Neovim config is pinned as a flake input, shared with non-nix machines machines.
 
-Edit Codex's global instructions in [config/codex/instructions.md](config/codex/instructions.md). Home Manager installs this as `~/.codex/AGENTS.md`; rebuild and start a new Codex session to apply changes.
+Edit the global instructions in [config/claude/instructions.md](config/claude/instructions.md). Home Manager installs this as `~/.claude/CLAUDE.md`; rebuild and start a new Claude Code session to apply changes. Repository-specific instructions remain in `AGENTS.md`, which current Claude Code versions read directly.
 
 ![screenshot](./screenshot.png)
 
@@ -133,7 +133,7 @@ sudo nixos-rebuild switch --flake '/etc/nixos-setup#nixos'
 
 Commit the changed `flake.lock` afterward so the new versions are pinned/shared. 
 
-Codex and Helium use writable downloads managed by wrappers in `modules/home/home.nix`, so their application versions are separate from `flake.lock`. Codex installs on first launch into `~/.local/bin`; use `codex update` to update it. Its instructions and permission defaults are managed through Home Manager.
+Claude Code and Helium use writable downloads managed by wrappers in `modules/home/home.nix`, so their application versions are separate from `flake.lock`. Claude Code installs on first launch into `~/.local/bin` using the official native installer and runs through `nix-ld`. It updates automatically; use `claude update` for an immediate update. Its global instructions and Dust theme are managed through Home Manager.
 
 To reclaim disk from old generations:
 

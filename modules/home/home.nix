@@ -135,24 +135,15 @@ let
       "$@"
   '';
 
-  # Codex uses a writable native install so `codex update` works.
-  # The official installer provides a static musl binary.
-  #
-  # ~/.local/bin is prepended to PATH so the installer's add_to_path() sees it
-  # already there and skips appending a PATH block to a shell profile: its
-  # pick_profile() has no fish case and would write a ~/.profile fish never reads.
-  codex = pkgs.writeShellScriptBin "codex" ''
+  # Keep the native install writable for self-updates; nix-ld supplies its loader.
+  # Pin installer dependencies on PATH.
+  claude = pkgs.writeShellScriptBin "claude" ''
     set -euo pipefail
-    bin="$HOME/.local/bin/codex"
+    bin="$HOME/.local/bin/claude"
     if [ ! -x "$bin" ]; then
-      echo "Fetching latest Codex CLI (native, self-updating)..." >&2
-      mkdir -p "$HOME/.local/bin"
-      export PATH="$HOME/.local/bin:${lib.makeBinPath [
-        pkgs.curl pkgs.coreutils pkgs.gnused pkgs.gnugrep pkgs.gawk
-        pkgs.findutils pkgs.gnutar pkgs.gzip pkgs.util-linux pkgs.bash
-      ]}:$PATH"
-      export CODEX_NON_INTERACTIVE=1
-      curl -fsSL https://chatgpt.com/codex/install.sh | sh
+      echo "Fetching latest Claude Code (native, self-updating)..." >&2
+      export PATH="${lib.makeBinPath [ pkgs.curl pkgs.coreutils pkgs.jq pkgs.gnused pkgs.gnugrep pkgs.bash ]}:$PATH"
+      curl -fsSL https://claude.ai/install.sh | bash
     fi
     exec "$bin" "$@"
   '';
@@ -195,8 +186,7 @@ in
     "*.pdf=38;2;217;169;92" "*.md=38;2;232;220;198" "*.txt=38;2;221;208;186"
   ];
 
-  # Codex discovers its Linux sandbox helper as bwrap on PATH.
-  home.packages = [ helium codex pkgs.bubblewrap ];
+  home.packages = [ helium claude pkgs.bubblewrap ];
 
   # Desktop entry so Helium shows in fuzzel and as the default browser.
   xdg.desktopEntries.helium = {
@@ -382,32 +372,25 @@ in
     };
   };
 
-  # Codex's global instructions. Deliberately NOT named AGENTS.md in the repo:
-  # codex concatenates every AGENTS.md from the git root down to the cwd, so a
-  # file by that name here would be read as instructions *for this repo* by any
-  # agent working in it, which these are not - they are the global defaults.
-  home.file.".codex/AGENTS.md".source = "${configDir}/codex/instructions.md";
+  # Keep global instructions separate from this repository's AGENTS.md.
+  home.file.".claude/CLAUDE.md".source = "${configDir}/claude/instructions.md";
+  home.file.".claude/themes/dust.json".source = "${configDir}/claude/dust.json";
 
-  # Keep Codex's config writable for project trust and UI settings.
-  # Reapply the managed permission defaults on each activation.
-  home.activation.codexSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run ${pkgs.python3.withPackages (ps: [ ps.tomlkit ])}/bin/python3 - "${config.home.homeDirectory}/.codex/config.toml" <<'EOF'
-    import os, sys
-    import tomlkit
-
+  # Merge the theme into writable settings, preserving other preferences.
+  home.activation.claudeTheme = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run ${pkgs.python3}/bin/python3 - "${config.home.homeDirectory}/.claude/settings.json" <<'EOF'
+    import json, os, sys
     path = sys.argv[1]
     os.makedirs(os.path.dirname(path), exist_ok=True)
     try:
         with open(path) as f:
-            cfg = tomlkit.load(f)
+            cfg = json.load(f)
     except FileNotFoundError:
-        cfg = tomlkit.document()
-    cfg["sandbox_mode"] = "workspace-write"
-    cfg["approval_policy"] = "on-request"
-    cfg["approvals_reviewer"] = "auto_review"
-    content = tomlkit.dumps(cfg)
-    with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:
-        f.write(content)
+        cfg = {}
+    cfg["theme"] = "custom:dust"
+    with open(path, "w") as f:
+        json.dump(cfg, f, indent=2)
+        f.write("\n")
     EOF
   '';
 

@@ -24,14 +24,14 @@ This flake defines `nixosConfigurations.nixos` for `x86_64-linux`, using nixos-u
 | `modules/system/packages.nix` | Desktop applications and AppImage/Steam integration. |
 | `modules/home/home.nix` | User packages, application wrappers, Home Manager files, activation scripts, shell, and appearance. |
 | `config/` | Application configuration sources installed through Home Manager. Edit these sources rather than their installed symlinks. |
-| `config/codex/instructions.md` | Global Codex instructions installed as `~/.codex/AGENTS.md`. This root `AGENTS.md` contains repository-specific guidance. |
+| `config/claude/instructions.md` | Global instructions installed as `~/.claude/CLAUDE.md`. This root `AGENTS.md` contains repository-specific guidance. |
 | `README.md` | Installation, rebuild, update, and rollback instructions. |
 
 ## Configuration conventions
 
 - Add packages to the existing module responsible for them. Prefer Nix-provided dependencies and explicit executable paths in service scripts and wrappers.
-- Helium and Codex use wrappers in `modules/home/home.nix` to keep their downloaded applications writable for updates. Preserve that behaviour unless the task is to change installation strategy.
-- Codex's permission defaults are merged into its writable configuration during Home Manager activation. Preserve unrelated settings, project trust, and authentication state.
+- Helium and Claude Code use wrappers in `modules/home/home.nix` to keep their downloaded applications writable for updates. Preserve that behaviour unless the task is to change installation strategy.
+- Claude Code's Dust theme is merged into its writable settings during Home Manager activation. Preserve unrelated settings, project trust, and authentication state.
 - Do not bump `system.stateVersion` or `home.stateVersion` as part of routine package updates.
 - This repository is a reusable setup for multiple machines. The deployment checkout at `/etc/nixos-setup` keeps machine-local changes uncommitted: the hardware configuration is staged, and `flake.lock` has an intent-to-add entry (`git add -N`) so Nix includes it. The shared Git remote intentionally has no lockfile. Preserve this local state, avoid incidental input updates, and do not commit or publish these machine-local files or repeatedly flag the shared checkout's missing lockfile. The README's instruction to commit the lockfile does not reflect this workflow.
 - Preserve speaker DSP behaviour when optimising resources. Its PipeWire filter-chain lives in `config/pipewire/thinkpad-unsuck.conf`, with LV2 dependencies supplied by `desktop.nix`.
