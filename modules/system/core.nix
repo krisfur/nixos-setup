@@ -107,6 +107,15 @@
     # (TLP would, but conflicts with ppd). "auto" lets drivers drop to D3 when
     # idle, which also parks the unused Realtek NIC; it resumes on carrier.
     ACTION=="add", SUBSYSTEM=="pci", ATTR{power/control}="auto"
+
+    # The Keychron Link dongle's second HID interface (3434:d030 iface 01)
+    # advertises 6 absolute axes, so udev tags it ID_INPUT_JOYSTICK and Wine's
+    # winebus enumerates it as a DirectInput gamepad whose axes rest at minimum
+    # - a permanently held "up" in games that read dinput (Injustice 2).
+    # Nothing uses it as a joystick; VIA/QMK talk over hidraw and are unaffected.
+    # Matched on ENV, not ATTRS: idVendor and bInterfaceNumber live on different
+    # parent devices, and udev requires all ATTRS to match one single parent.
+    SUBSYSTEM=="input", ENV{ID_VENDOR_ID}=="3434", ENV{ID_MODEL_ID}=="d030", ENV{ID_USB_INTERFACE_NUM}=="01", ENV{ID_INPUT_JOYSTICK}=""
   '';
 
   # NM otherwise defers to the driver default, which leaves this off.
