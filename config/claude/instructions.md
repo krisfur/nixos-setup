@@ -28,8 +28,8 @@
 - Flag security, privacy, data-loss, migration, and backward-compatibility risks explicitly.
 
 ## Git
-- Never add "Co-Authored-By: Codex" or any co-author trailer to commits.
-- Never add "Generated with Codex" or any similar tool attribution to commits or PRs.
+- Never add "Co-Authored-By: Claude" or any co-author trailer to commits.
+- Never add "🤖 Generated with Claude Code" or similar attribution to commits or PRs.
 - Write commit messages as if I authored them always ending with a full stop ".".
 - Never push straight to the main branch.
 

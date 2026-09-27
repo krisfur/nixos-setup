@@ -373,7 +373,10 @@ in
   };
 
   # Keep global instructions separate from this repository's AGENTS.md.
-  home.file.".claude/CLAUDE.md".source = "${configDir}/claude/instructions.md";
+  home.file.".claude/CLAUDE.md" = {
+    source = "${configDir}/claude/instructions.md";
+    force = true;
+  };
   home.file.".claude/themes/dust.json".source = "${configDir}/claude/dust.json";
 
   # Merge the theme into writable settings, preserving other preferences.
