@@ -11,6 +11,7 @@
 - Read documentation and perform web searches to ensure your information is up to date.
 - Never use em dashes "—", use hyphens "-" instead.
 - Be extremely brief in code comments, giving only absolutely crucial information. Preferably maximum of 2 lines per comment.
+- Use oxford commas and British spelling.
 
 ## Code reviews/PRs:
 - Prioritize correctness, security, maintainability, and regression risk.
