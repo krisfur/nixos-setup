@@ -66,6 +66,7 @@ in
     viu                # terminal image preview
     gimp               # image editing
     localsend          # cross-device file sharing (firewall ports opened in core.nix)
+    transmission_4-gtk # torrent client (GTK4, follows libadwaita theme)
     bluetuith          # TUI bluetooth manager (waybar on-click)
     btop               # TUI system monitor (waybar on-click)
     xarchiver          # archive GUI for thunar
