@@ -50,6 +50,9 @@ in
   # Proton much later. Selected per-game in the compatibility settings.
   programs.steam.extraCompatPackages = [ pkgs.proton-ge-bin ];
 
+  # Dolphin's udev rules grant access to the GameCube controller adapter.
+  services.udev.packages = [ pkgs.dolphin-emu ];
+
   environment.systemPackages = with pkgs; [
     ghostty            # terminal
     # glib checks xdg-terminal-exec before falling back to a hardcoded terminal
@@ -72,6 +75,7 @@ in
     xarchiver          # archive GUI for thunar
     gamescope          # gaming compositor
     rpcs3              # PlayStation 3 emulator
+    dolphin-emu        # GameCube/Wii emulator
     mangohud           # in-game frame/CPU/GPU/VRAM overlay: `MANGOHUD=1 %command%`
     fastfetch          # system info (config vendored via home-manager)
 
