@@ -53,11 +53,11 @@ in
   # Dolphin's udev rules grant access to the GameCube controller adapter.
   services.udev.packages = [ pkgs.dolphin-emu ];
 
-  # The Corsair Novablade Pro receiver (1b1c:2b2b) exposes an XInput interface
-  # (class ff/5d/01) that xpad has no ID for, so no gamepad appears.
-  # new_id makes xpad bind it; the write fails harmlessly once the ID is known.
+  # xpad lacks XPAD_XBOX360_VENDOR(0x1b1c), so Corsair XInput interfaces
+  # (ff/5d/01, e.g. Novablade Pro wired 2b1f and receiver 2b2b) go unbound.
+  # Feed each one's PID to new_id; the write fails harmlessly once known.
   services.udev.extraRules = ''
-    ACTION=="add", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="1b1c", ATTR{idProduct}=="2b2b", RUN+="${pkgs.bash}/bin/sh -c '${pkgs.kmod}/bin/modprobe xpad; echo 1b1c 2b2b ff > /sys/bus/usb/drivers/xpad/new_id || true'"
+    ACTION=="add", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_interface", ATTR{bInterfaceClass}=="ff", ATTR{bInterfaceSubClass}=="5d", ATTR{bInterfaceProtocol}=="01", ATTRS{idVendor}=="1b1c", RUN+="${pkgs.bash}/bin/sh -c '${pkgs.kmod}/bin/modprobe xpad; echo 1b1c $attr{idProduct} ff > /sys/bus/usb/drivers/xpad/new_id || true'"
   '';
 
   environment.systemPackages = with pkgs; [
