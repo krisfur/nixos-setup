@@ -53,6 +53,13 @@ in
   # Dolphin's udev rules grant access to the GameCube controller adapter.
   services.udev.packages = [ pkgs.dolphin-emu ];
 
+  # The Corsair Novablade Pro receiver (1b1c:2b2b) exposes an XInput interface
+  # (class ff/5d/01) that xpad has no ID for, so no gamepad appears.
+  # new_id makes xpad bind it; the write fails harmlessly once the ID is known.
+  services.udev.extraRules = ''
+    ACTION=="add", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="1b1c", ATTR{idProduct}=="2b2b", RUN+="${pkgs.bash}/bin/sh -c '${pkgs.kmod}/bin/modprobe xpad; echo 1b1c 2b2b ff > /sys/bus/usb/drivers/xpad/new_id || true'"
+  '';
+
   environment.systemPackages = with pkgs; [
     ghostty            # terminal
     # glib checks xdg-terminal-exec before falling back to a hardcoded terminal
