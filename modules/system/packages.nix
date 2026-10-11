@@ -51,7 +51,15 @@ in
   programs.steam.extraCompatPackages = [ pkgs.proton-ge-bin ];
 
   # Dolphin's udev rules grant access to the GameCube controller adapter.
-  services.udev.packages = [ pkgs.dolphin-emu ];
+  # Corsair's web software needs WebHID/WebUSB access to Corsair devices.
+  # uaccess must be tagged before 73-seat-late.rules, so not in extraRules (99).
+  services.udev.packages = [
+    pkgs.dolphin-emu
+    (pkgs.writeTextDir "lib/udev/rules.d/70-corsair-uaccess.rules" ''
+      SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1b1c", TAG+="uaccess"
+      SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="1b1c", TAG+="uaccess"
+    '')
+  ];
 
   # xpad lacks XPAD_XBOX360_VENDOR(0x1b1c), so Corsair XInput interfaces
   # (ff/5d/01, e.g. Novablade Pro wired 2b1f and receiver 2b2b) go unbound.
