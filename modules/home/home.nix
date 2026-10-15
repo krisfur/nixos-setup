@@ -59,21 +59,32 @@ let
   '';
 
   # Controller input never reaches the seat, so swayidle counts a gamepad
-  # session as idle; Steam's reaper process marks a running game.
-  idleLockCmd = pkgs.writeShellScript "idle-lock" ''
+  # session or call as idle; exits 0 while one is active. Steam's reaper marks
+  # a running game, emulators only open audio once a game boots, and Discord
+  # only captures the mic in a call.
+  idleBusyCmd = pkgs.writeShellScript "idle-busy" ''
     ${pkgs.procps}/bin/pgrep -f 'SteamLaunch AppId=' >/dev/null && exit 0
+    ${pkgs.pipewire}/bin/pw-dump | ${pkgs.jq}/bin/jq -e 'any(.[];
+      (.info.props? // {}) as $p
+      | ($p."application.process.binary" // "" | ascii_downcase) as $b
+      | ($p."media.class" == "Stream/Input/Audio" and ($b | contains("discord")))
+        or ($p."media.class" == "Stream/Output/Audio" and ($b | test("dolphin-emu|rpcs3"))))' >/dev/null
+  '';
+
+  idleLockCmd = pkgs.writeShellScript "idle-lock" ''
+    ${idleBusyCmd} && exit 0
     exec ${lockCmd}
   '';
 
   idleDisplaysCmd = pkgs.writeShellScript "idle-displays" ''
-    ${pkgs.procps}/bin/pgrep -f 'SteamLaunch AppId=' >/dev/null && exit 0
+    ${idleBusyCmd} && exit 0
     exec ${pkgs.sway}/bin/swaymsg 'output * power off'
   '';
 
-  # Suspend after 30 min idle, with the same skip-while-gaming guard. Media
+  # Suspend after 30 min idle, with the same skip-while-busy guard. Media
   # playback holds the Wayland idle inhibitor, which blocks swayidle already.
   idleSuspendCmd = pkgs.writeShellScript "idle-suspend" ''
-    ${pkgs.procps}/bin/pgrep -f 'SteamLaunch AppId=' >/dev/null && exit 0
+    ${idleBusyCmd} && exit 0
     exec ${pkgs.systemd}/bin/systemctl --no-block suspend
   '';
 
