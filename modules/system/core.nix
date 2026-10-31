@@ -27,7 +27,6 @@
   # If this causes NVMe stalls or wifi drops, step down to "powersave".
   boot.kernelParams = [ "quiet" "pcie_aspm.policy=powersupersave" ];
   boot.consoleLogLevel = 0;
-  boot.initrd.verbose = false;
 
   # Networking.
   networking.networkmanager.enable = true;
