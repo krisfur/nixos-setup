@@ -123,24 +123,33 @@
   # priority, never lowers one, so a hand-set value is never stomped.
   #
   # It also runs on resume because ath11k re-inits its firmware there and the
-  # 6 GHz half of the channel list only returns with the regulatory push ~4.5s
-  # later ("Channel list changed: 6 GHz was enabled"). NM's own post-resume
-  # scan often starts just before that, so the 6 GHz BSS is missing from the
-  # results, it settles on whatever 2.4/5 GHz profile it can see, and does not
-  # reconsider until the next periodic scan about two minutes on. Rescanning
-  # until a 6 GHz BSS shows up collapses that to a few seconds.
+  # 6 GHz half of the channel list only returns with the regulatory push
+  # ("Channel list changed: 6 GHz was enabled"), measured at 0-24s after resume
+  # (median 5s, p90 20s). NM's own post-resume scan often starts before that,
+  # so the 6 GHz BSS is missing from the results, it settles on whatever
+  # 2.4/5 GHz profile it can see, and does not reconsider until the next
+  # periodic scan up to two minutes on. Rescanning once the band is back
+  # collapses that to a few seconds. Wait on the channel list itself: nmcli's
+  # BSS list still holds pre-suspend 6 GHz entries, so "a 6 GHz BSS is listed"
+  # was true before the band returned and ended the retries too early.
   systemd.services.wifi-prefer-6ghz = {
     description = "Rank saved wifi profiles seen on 6 GHz above the rest";
     after = [ "NetworkManager.service" "suspend.target" ];
     wantedBy = [ "multi-user.target" "suspend.target" ];
-    path = with pkgs; [ networkmanager gawk gnugrep coreutils ];
+    path = with pkgs; [ networkmanager iw gawk gnugrep coreutils ];
     serviceConfig = {
       Type = "oneshot";
-      TimeoutStartSec = "90s";
+      TimeoutStartSec = "120s";
     };
     script = ''
       seen=$(mktemp)
       trap 'rm -f "$seen"' EXIT
+
+      # Until the regulatory push every 6 GHz channel is disabled.
+      for i in $(seq 40); do
+        if iw phy | grep -E '\* 6[0-9]{3}\.0 MHz' | grep -qv disabled; then break; fi
+        sleep 1
+      done
 
       # Retry: on resume the first scans run before the band is back.
       for i in 1 2 3 4 5 6; do
