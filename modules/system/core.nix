@@ -111,6 +111,10 @@
   # NM otherwise defers to the driver default, which leaves this off.
   networking.networkmanager.wifi.powersave = true;
 
+  # The NixOS default (WARN) hides scans, DHCP, and whether an activation was
+  # automatic or user-requested, which left the 6 GHz reconnect issue opaque.
+  networking.networkmanager.logLevel = "INFO";
+
   # Prefer 6 GHz wherever it exists as its own SSID.
   #
   # NM has no band preference to set: 802-11-wireless.band only takes "a"/"bg"
@@ -177,6 +181,27 @@
           done
     '';
   };
+
+  # Mark any profile that comes up on 6 GHz as hidden so NM probes for it by
+  # name. Passive scans keep missing the 6 GHz BSS (6 scans over 50s at boot on
+  # 2026-10-31) while a directed probe finds it at once, which is why the
+  # applet's "hidden network" connect always worked. Cost: the SSID goes out in
+  # probe requests wherever the laptop scans. Only ever sets yes, never clears.
+  networking.networkmanager.dispatcherScripts = [
+    {
+      type = "basic";
+      source = pkgs.writeShellScript "wifi-6ghz-hidden" ''
+        [ "$2" = up ] && [ -n "$CONNECTION_UUID" ] || exit 0
+        nmcli=${pkgs.networkmanager}/bin/nmcli
+        [ "$($nmcli -g connection.type connection show "$CONNECTION_UUID")" = 802-11-wireless ] || exit 0
+        freq=$($nmcli -t -f IN-USE,FREQ device wifi list ifname "$1" --rescan no \
+          | ${pkgs.gawk}/bin/awk -F: '$1 == "*" { print $2 + 0 }')
+        [ "''${freq:-0}" -gt 5900 ] || exit 0
+        [ "$($nmcli -g 802-11-wireless.hidden connection show "$CONNECTION_UUID")" = yes ] \
+          || $nmcli connection modify "$CONNECTION_UUID" 802-11-wireless.hidden yes
+      '';
+    }
+  ];
 
   # 16 GB minus the 4 GB UMA carve-out leaves ~11.8 GB, and games that want 16 GB
   # then have nothing to reclaim but page cache — including their own mapped
