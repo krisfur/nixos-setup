@@ -6,7 +6,7 @@
 - Make persistent system and application changes declaratively in this repository. Do not fix issues by editing generated files in `/etc` or `~/.config`, installing packages imperatively, or changing live service or power state.
 - Read-only diagnostics and builds are appropriate. Let the user run `nixos-rebuild switch`, service restarts, and other commands that change the running system unless they explicitly delegate those actions.
 - Keep secrets, authentication state, and private network identifiers out of the repository and Nix store. Account login, Wi-Fi credentials, and fingerprint enrolment remain local state.
-- Work in the current checkout. README installation examples use `/etc/nixos-setup`, but the working copy may be elsewhere; give rebuild commands pointing to the checkout actually edited.
+- Work in the current checkout. The machine is deployed from `/etc/nixos-setup`, which is a separate clone when the working copy is elsewhere. Edits reach it only by being committed and pushed from the working copy, then pulled into `/etc/nixos-setup` (README "Apply changes later"). Do not suggest copying files into `/etc/nixos-setup` by hand.
 - Preserve the reasoning in existing module comments. Recheck historical troubleshooting conclusions against current configuration and measurements before relying on them.
 
 ## Layout and setup
@@ -39,7 +39,7 @@ This flake defines `nixosConfigurations.nixos` for `x86_64-linux`, using nixos-u
 ## Validation and handoff
 
 - Run `git diff --check` and parse changed Nix files with `nix-instantiate --parse <file>`. Match the existing formatting; avoid unrelated file-wide reformatting.
-- Evaluate affected options when possible, using `nix eval .#nixosConfigurations.nixos.config.<option>`. For changes requiring full system validation, use `nix build .#nixosConfigurations.nixos.config.system.build.toplevel --no-link` without activating it.
+- Evaluate affected options when possible, using `nix eval .#nixosConfigurations.nixos.config.<option>`. For changes requiring full system validation, use `nix build .#nixosConfigurations.nixos.config.system.build.toplevel --no-link` without activating it. A working copy without a lockfile would resolve fresh inputs and write one, so add `--no-write-lock-file --reference-lock-file /etc/nixos-setup/flake.lock` to evaluate against the deployed pins.
 - Flakes exclude untracked files in Git checkouts. Account for newly added configuration files before evaluating or building; do not misdiagnose an omitted file as a Nix module error.
 - Distinguish syntax checks, evaluation, builds, and runtime verification in the handoff. Report checks that could not run and why; do not claim activation or runtime success from a build alone.
-- Give the user the rebuild command for the edited checkout and identify any additional restart or reboot required by the change.
+- Give the user the deploy steps: commit and push, `sudo git -C /etc/nixos-setup pull`, then `sudo nixos-rebuild switch --flake '/etc/nixos-setup#nixos'`. Identify any additional restart or reboot required by the change.
