@@ -128,14 +128,14 @@
   #
   # It also runs on resume because ath11k re-inits its firmware there and the
   # 6 GHz half of the channel list only returns with the regulatory push
-  # ("Channel list changed: 6 GHz was enabled"), measured at 0-24s after resume
-  # (median 5s, p90 20s). NM's own post-resume scan often starts before that,
-  # so the 6 GHz BSS is missing from the results, it settles on whatever
-  # 2.4/5 GHz profile it can see, and does not reconsider until the next
-  # periodic scan up to two minutes on. Rescanning once the band is back
-  # collapses that to a few seconds. Wait on the channel list itself: nmcli's
-  # BSS list still holds pre-suspend 6 GHz entries, so "a 6 GHz BSS is listed"
-  # was true before the band returned and ended the retries too early.
+  # ("Channel list changed: 6 GHz was enabled"). ath11k holds that update until
+  # any running scan ends (reg.c), and NM's first post-resume scan starts about
+  # 0.1s after the push arrives, so 6 GHz usually returns only when a ~4s scan
+  # of all 62 channels completes, and NM's next scan may race it and lose too.
+  # Measured over 150 resumes: connects land about one scan after the band
+  # returns, at 4s, 8s, 13s, or later. So abort that first scan to let the update
+  # through, then probe saved hidden networks on the 6 GHz PSC channels only,
+  # which is far shorter than a full scan. If that misses, NM's scans still run.
   systemd.services.wifi-prefer-6ghz = {
     description = "Rank saved wifi profiles seen on 6 GHz above the rest";
     after = [ "NetworkManager.service" "suspend.target" ];
@@ -143,17 +143,47 @@
     path = with pkgs; [ networkmanager iw gawk gnugrep coreutils ];
     serviceConfig = {
       Type = "oneshot";
-      TimeoutStartSec = "120s";
+      TimeoutStartSec = "90s";
     };
     script = ''
       seen=$(mktemp)
       trap 'rm -f "$seen"' EXIT
 
-      # Until the regulatory push every 6 GHz channel is disabled.
-      for i in $(seq 40); do
-        if iw phy | grep -E '\* 6[0-9]{3}\.0 MHz' | grep -qv disabled; then break; fi
-        sleep 1
-      done
+      dev=$(nmcli -t -f DEVICE,TYPE device | awk -F: '$2 == "wifi" { print $1; exit }')
+      disconnected() { nmcli -g GENERAL.STATE device show "$dev" 2>/dev/null | grep -q '^30 '; }
+
+      if [ -n "$dev" ]; then
+        for i in $(seq 30); do
+          if disconnected; then break; fi
+          sleep 0.1
+        done
+
+        probe=()
+        while read -r uuid; do
+          if [ "$(nmcli -g 802-11-wireless.hidden connection show "$uuid")" = yes ]; then
+            probe+=(ssid "$(nmcli -e no -g 802-11-wireless.ssid connection show "$uuid")")
+          fi
+        done < <(nmcli -t -f UUID,TYPE connection show | awk -F: '$2 == "802-11-wireless" { print $1 }')
+
+        # 5975 + 80n MHz are the PSC channels.
+        psc=$(iw phy | awk '/\* 6[0-9]+\.0 MHz/ && !/disabled/ { f = $2 + 0; if ((f - 5975) % 80 == 0) print f }')
+
+        if disconnected; then
+          for i in $(seq 30); do
+            if iw dev "$dev" scan abort >/dev/null 2>&1; then break; fi
+            sleep 0.1
+          done
+          if [ ''${#probe[@]} -gt 0 ] && [ -n "$psc" ]; then
+            for i in 1 2 3 4; do
+              sleep 0.3
+              disconnected || break
+              # shellcheck disable=SC2086
+              iw dev "$dev" scan trigger freq $psc "''${probe[@]}" >/dev/null 2>&1 || true
+              sleep 0.5
+            done
+          fi
+        fi
+      fi
 
       # Retry: on resume the first scans run before the band is back.
       for i in 1 2 3 4 5 6; do
