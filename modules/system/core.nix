@@ -135,7 +135,9 @@
   # Measured over 150 resumes: connects land about one scan after the band
   # returns, at 4s, 8s, 13s, or later. So abort that first scan to let the update
   # through, then probe saved hidden networks on the 6 GHz PSC channels only,
-  # which is far shorter than a full scan. If that misses, NM's scans still run.
+  # which is far shorter than a full scan. Keep probing while disconnected: a
+  # probe can take seconds to start working, and the update itself can stall for
+  # ath11k's 20s timeout (ATH11K_SCAN_TIMEOUT_HZ), while NM's scans back off.
   systemd.services.wifi-prefer-6ghz = {
     description = "Rank saved wifi profiles seen on 6 GHz above the rest";
     after = [ "NetworkManager.service" "suspend.target" ];
@@ -143,7 +145,7 @@
     path = with pkgs; [ networkmanager iw gawk gnugrep coreutils ];
     serviceConfig = {
       Type = "oneshot";
-      TimeoutStartSec = "90s";
+      TimeoutStartSec = "150s";
     };
     script = ''
       seen=$(mktemp)
@@ -174,13 +176,14 @@
             sleep 0.1
           done
           if [ ''${#probe[@]} -gt 0 ] && [ -n "$psc" ]; then
-            for i in 1 2 3 4; do
+            for i in $(seq 60); do
               sleep 0.3
               disconnected || break
               # shellcheck disable=SC2086
-              iw dev "$dev" scan trigger freq $psc "''${probe[@]}" >/dev/null 2>&1 || true
+              iw dev "$dev" scan trigger freq $psc "''${probe[@]}" >/dev/null 2>&1 || echo "probe $i rejected"
               sleep 0.5
             done
+            echo "stopped probing after $i attempts"
           fi
         fi
       fi
