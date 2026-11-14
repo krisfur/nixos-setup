@@ -46,8 +46,9 @@ in
   # bundle it, and its AppRun rewrites LD_LIBRARY_PATH so env relaying is
   # unreliable. Bake libva into the sandbox instead — it finds the radeonsi
   # driver under /run/opengl-driver/lib/dri itself, no LIBVA_* needed.
+  # CurseForge (Electron) dlopens libnotify for notifications.
   programs.appimage.package = pkgs.appimage-run.override {
-    extraPkgs = pkgs: [ pkgs.libva ];
+    extraPkgs = pkgs: [ pkgs.libva pkgs.libnotify ];
   };
 
   # Steam runs in an FHS env and enables 32-bit graphics libs automatically.

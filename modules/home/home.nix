@@ -146,6 +146,26 @@ let
       "$@"
   '';
 
+  # CurseForge (Electron AppImage), same approach as Helium. Overwolf only ships
+  # it zipped, and the zip lags the app; its updater fixes that on first run.
+  curseforge = pkgs.writeShellScriptBin "curseforge" ''
+    set -euo pipefail
+    app="$HOME/Applications/curseforge.AppImage"
+    if [ ! -x "$app" ]; then
+      mkdir -p "$HOME/Applications"
+      echo "Fetching latest CurseForge AppImage..." >&2
+      tmp=$(mktemp -d)
+      trap 'rm -rf "$tmp"' EXIT
+      ${pkgs.curl}/bin/curl -fL \
+        https://curseforge.overwolf.com/downloads/curseforge-latest-linux.zip \
+        -o "$tmp/cf.zip"
+      ${pkgs.unzip}/bin/unzip -q "$tmp/cf.zip" -d "$tmp"
+      mv "$tmp"/*.AppImage "$app"
+      chmod +x "$app"
+    fi
+    exec "$app" "$@"
+  '';
+
   # Keep the native install writable for self-updates; nix-ld supplies its loader.
   # Pin installer dependencies on PATH.
   claude = pkgs.writeShellScriptBin "claude" ''
@@ -197,7 +217,7 @@ in
     "*.pdf=38;2;217;169;92" "*.md=38;2;232;220;198" "*.txt=38;2;221;208;186"
   ];
 
-  home.packages = [ helium claude pkgs.bubblewrap ];
+  home.packages = [ helium curseforge claude pkgs.bubblewrap ];
 
   # Desktop entry so Helium shows in fuzzel and as the default browser.
   xdg.desktopEntries.helium = {
@@ -207,6 +227,19 @@ in
     icon = "applications-internet";
     categories = [ "Network" "WebBrowser" ];
     mimeType = [ "text/html" "x-scheme-handler/http" "x-scheme-handler/https" ];
+  };
+  # The scheme handlers carry login and "Install" links from the browser.
+  xdg.desktopEntries.curseforge = {
+    name = "CurseForge";
+    exec = "curseforge %U";
+    icon = "applications-games";
+    categories = [ "Game" ];
+    mimeType = [
+      "x-scheme-handler/curseforge"
+      "x-scheme-handler/cfauth"
+      "x-scheme-handler/curseforge-checkout"
+    ];
+    settings.StartupWMClass = "CurseForge";
   };
   # NOT xdg.mimeApps: that symlinks mimeapps.list into the store read-only, and
   # every "open with -> set as default" writes through GIO to that same file, so
