@@ -127,7 +127,7 @@ Package versions are pinned by `flake.lock`.
 Updating = bumping the lock to the latest `nixos-unstable` (and other inputs), then rebuilding:
 
 ```bash
-sudo nix flake update --flake /etc/nixos-setup     # bump flake.lock
+sudo nix flake update --flake /etc/nixos-setup
 sudo nixos-rebuild switch --flake '/etc/nixos-setup#nixos'
 ```
 
