@@ -163,7 +163,13 @@ let
       mv "$tmp"/*.AppImage "$app"
       chmod +x "$app"
     fi
-    exec "$app" "$@"
+    # The updater's relaunch dies with the appimage-run sandbox
+    # (--die-with-parent), so relaunch here if the AppImage was replaced.
+    before=$(${pkgs.coreutils}/bin/stat -c %Y "$app")
+    "$app" "$@" || true
+    if [ "$(${pkgs.coreutils}/bin/stat -c %Y "$app")" != "$before" ]; then
+      exec "$app"
+    fi
   '';
 
   # Keep the native install writable for self-updates; nix-ld supplies its loader.
