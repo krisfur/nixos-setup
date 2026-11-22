@@ -194,4 +194,8 @@ in
     noto-fonts-color-emoji
   ];
   fonts.fontconfig.defaultFonts.monospace = [ "JetBrainsMono Nerd Font" ];
+
+  # icon-theme.cache for the system profile's themes. Plasma brings uncached
+  # breeze/hicolor, which Papirus inherits; GTK otherwise scans them per launch.
+  gtk.iconCache.enable = true;
 }

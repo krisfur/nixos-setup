@@ -102,4 +102,16 @@ in
     libmtp
     android-tools
   ];
+
+  # Ghostty's D-Bus-activated service, started with the session so the first
+  # window skips the ~1-3 s GTK cold start (stays resident: ghostty config).
+  systemd.packages = [ pkgs.ghostty ];
+  systemd.user.services."app-com.mitchellh.ghostty" = {
+    wantedBy = [ "graphical-session.target" ];
+    # NixOS would otherwise pin PATH to coreutils & co. for ghostty's shells.
+    enableDefaultPath = false;
+    # Plasma exports ~90 store paths here, incl. uncached breeze-icons, which
+    # GTK scans file by file (~400 ms). The wrapper adds its own dirs back.
+    environment.XDG_DATA_DIRS = "/etc/profiles/per-user/%u/share:/run/current-system/sw/share";
+  };
 }

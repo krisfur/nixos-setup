@@ -15,6 +15,8 @@ font-size = 11
 # fontconfig race that can SIGSEGV every window at once with 2+ open. Revert
 # to `false` if that starts biting.
 gtk-single-instance = true
+# Stay resident with no windows: reopening is ~150 ms, not a GTK cold start.
+quit-after-last-window-closed = false
 
 # Warm sepia palette matching the wallpaper.
 palette = 0=#2b2520

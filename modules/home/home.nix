@@ -261,7 +261,17 @@ in
   xdg.desktopEntries.curseforge = {
     name = "CurseForge";
     exec = "curseforge %U";
-    icon = "applications-games";
+    # The app's icon (white anvil on black) rebuilt from Simple Icons' pinned
+    # glyph; the AppImage's own only exists after its "latest" download.
+    icon = "${pkgs.runCommand "curseforge-icon.svg" {
+      glyph = pkgs.fetchurl {
+        url = "https://raw.githubusercontent.com/simple-icons/simple-icons/ae32bce73c78509a49cc132daa0df4c406f917e8/icons/curseforge.svg";
+        hash = "sha256-VUY8mP5DuXaKY2wWLqwTFQFo+Vm2xMVVOgFnbgurobo=";
+      };
+    } ''
+      d=$(${pkgs.gnused}/bin/sed -n 's/.*<path d="\([^"]*\)".*/\1/p' "$glyph")
+      echo "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><rect width=\"24\" height=\"24\" rx=\"5.5\" fill=\"#111\"/><path transform=\"translate(4.2 4.2) scale(0.65)\" fill=\"#fff\" d=\"$d\"/></svg>" > $out
+    ''}";
     categories = [ "Game" ];
     mimeType = [
       "x-scheme-handler/curseforge"

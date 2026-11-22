@@ -69,9 +69,29 @@ in
           # No pinned apps (stock pins Settings, Dolphin, browser); shortcuts cover them.
           { iconTasks.launchers = [ ]; }
           "org.kde.plasma.marginsseparator"
-          # Stock presets: ring charts of CPU and RAM %, like waybar's hardware group.
-          "org.kde.plasma.systemmonitor.cpu"
-          "org.kde.plasma.systemmonitor.memory"
+          # Labelled CPU / RAM rows like waybar's hardware group; the stock ring
+          # presets were unlabelled and indistinguishable.
+          {
+            systemMonitor = {
+              displayStyle = "org.kde.ksysguard.textonly";
+              sensors = [
+                {
+                  name = "cpu/all/usage";
+                  label = "CPU";
+                  color = "201,160,107";
+                }
+                {
+                  name = "memory/physical/used";
+                  label = "RAM";
+                  color = "163,186,178";
+                }
+              ];
+              textOnlySensors = [
+                "cpu/all/averageTemperature"
+                "memory/physical/total"
+              ];
+            };
+          }
           # plasma-manager can't configure tray items yet (items.configs is a
           # no-op), so the battery sits on the panel and the tray's copy is hidden.
           { systemTray.items.hidden = [ "org.kde.plasma.battery" ]; }
