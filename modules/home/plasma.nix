@@ -4,7 +4,9 @@
 # bindings, idle/lid behaviour, and Dust look. Only keys set here are managed;
 # anything changed in System Settings persists alongside them.
 let
-  wallpaper = ../../config/wallpaper/wallpaper.jpg;
+  # Interpolated so the image gets its own store path; a bare path inside the
+  # flake source isn't kept in the closure and Plasma found nothing there.
+  wallpaper = "${../../config/wallpaper/wallpaper.jpg}";
 
   # UK-layout shifted digits: KWin may register Meta+Shift+1 as Meta+!.
   shiftedDigits = [
@@ -44,19 +46,20 @@ in
       pointSize = 10;
     };
 
-    # Top bar in the waybar layout: desktops left, clock centre, tray right.
+    # Plasma's stock panel (plasma-desktop's defaultPanel layout template).
     panels = [
       {
-        location = "top";
-        height = 36;
+        location = "bottom";
+        floating = true;
+        height = 44;
         widgets = [
           "org.kde.plasma.kickoff"
           "org.kde.plasma.pager"
-          { iconTasks.launchers = [ ]; }
-          "org.kde.plasma.panelspacer"
-          { digitalClock.time.format = "24h"; }
-          "org.kde.plasma.panelspacer"
+          "org.kde.plasma.icontasks"
+          "org.kde.plasma.marginsseparator"
           "org.kde.plasma.systemtray"
+          "org.kde.plasma.digitalclock"
+          "org.kde.plasma.showdesktop"
         ];
       }
     ];
@@ -155,7 +158,11 @@ in
           "Meta+W"
         ];
         "Overview" = "Meta+O"; # default Meta+W, taken by close
-        "Window Fullscreen" = "Meta+F";
+        "Window Maximize" = [
+          "Meta+PgUp"
+          "Meta+F"
+        ];
+        "Window Fullscreen" = "Meta+Shift+F";
 
         "Switch Window Left" = "Meta+Left";
         "Switch Window Right" = "Meta+Right";
