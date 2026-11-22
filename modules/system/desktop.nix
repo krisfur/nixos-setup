@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 
 let
   # Session command run by greetd. Sets the bits sway and portals expect,
@@ -10,8 +10,23 @@ let
     export MOZ_ENABLE_WAYLAND=1
     export QT_QPA_PLATFORM=wayland
     export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+    # Qt apps take the GTK colours here. Set per session, not in home-manager's
+    # qt module, whose environment.d export would override Plasma's own theme.
+    export QT_QPA_PLATFORMTHEME=gtk3
     exec ${pkgs.sway}/bin/sway
   '';
+
+  # Lists sway in tuigreet's session menu next to Plasma.
+  swaySessionEntry =
+    pkgs.writeTextDir "share/wayland-sessions/sway.desktop" ''
+      [Desktop Entry]
+      Name=Sway
+      Exec=${swaySession}
+      Type=Application
+    ''
+    // {
+      providedSessions = [ "sway" ];
+    };
 in
 {
   # Recolour Papirus folders once, globally, so home-manager (useGlobalPkgs)
@@ -57,11 +72,16 @@ in
     xfce4-settings
   ];
 
-  # Login: greetd + tuigreet, launching sway.
+  # KDE Plasma, offered alongside sway. User settings in modules/home/plasma.nix.
+  services.desktopManager.plasma6.enable = true;
+  services.displayManager.sessionPackages = [ swaySessionEntry ];
+
+  # Login: greetd + tuigreet. F3 picks the session (sway or Plasma) and
+  # --remember-session keeps the choice; sway is the fallback.
   services.greetd = {
     enable = true;
     settings.default_session = {
-      command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd ${swaySession}";
+      command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-session --sessions ${config.services.displayManager.sessionData.desktops}/share/wayland-sessions --cmd ${swaySession}";
       user = "greeter";
     };
   };
@@ -72,6 +92,8 @@ in
   # that enumerates TTS voices pins the daemon plus a module process per synth
   # for the rest of the boot. No screen reader here, so drop it.
   services.speechd.enable = false;
+  # Plasma enables the Orca screen reader by default, which forces speechd on.
+  services.orca.enable = false;
 
   # Audio via PipeWire.
   services.pulseaudio.enable = false;
@@ -101,6 +123,11 @@ in
       "org.freedesktop.impl.portal.ScreenCast" = [ "wlr" ];
       "org.freedesktop.impl.portal.Screenshot" = [ "wlr" ];
     };
+    # Plasma's own portal; the wlr backends don't work under KWin.
+    config.kde.default = [
+      "kde"
+      "gtk"
+    ];
   };
 
   # Fingerprint reader. Enabling fprintd defaults fprintAuth to true for sudo,

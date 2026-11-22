@@ -23,6 +23,7 @@ This flake defines `nixosConfigurations.nixos` for `x86_64-linux`, using nixos-u
 | `modules/system/dev.nix` | System-wide development tools, language servers, formatters, Docker, and nix-ld. |
 | `modules/system/packages.nix` | Desktop applications and AppImage/Steam integration. |
 | `modules/home/home.nix` | User packages, application wrappers, Home Manager files, activation scripts, shell, and appearance. |
+| `modules/home/plasma.nix` | KDE Plasma session settings through plasma-manager: shortcuts, input, panel, power, lock screen, and Dust look. |
 | `config/` | Application configuration sources installed through Home Manager. Edit these sources rather than their installed symlinks. |
 | `config/claude/instructions.md` | Global instructions installed as `~/.claude/CLAUDE.md`. This root `AGENTS.md` contains repository-specific guidance. |
 | `README.md` | Installation, rebuild, update, and rollback instructions. |

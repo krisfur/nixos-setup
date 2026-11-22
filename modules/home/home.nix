@@ -203,6 +203,8 @@ let
   '';
 in
 {
+  imports = [ ./plasma.nix ];
+
   home.username = "kfurman";
   home.homeDirectory = "/home/kfurman";
   home.stateVersion = "25.05";
@@ -409,12 +411,23 @@ in
     "Gtk/CursorThemeName" = "Bibata-Modern-Classic";
   };
 
-  # Qt apps default to Breeze and ignore every GTK setting above. Point Qt's
-  # platform theme at GTK so they pull the same colours.
-  qt = {
-    enable = true;
-    platformTheme.name = "gtk3";
-  };
+  # Qt apps follow GTK under sway via QT_QPA_PLATFORMTHEME in the sway session
+  # (modules/system/desktop.nix); home-manager's qt module would leak it into Plasma.
+
+  # Plasma's GTK sync and kconf_update scripts may replace these store symlinks;
+  # force lets the next activation restore them instead of aborting.
+  gtk.gtk2.force = true;
+  xdg.configFile."gtk-3.0/settings.ini".force = true;
+  xdg.configFile."gtk-3.0/gtk.css".force = true;
+  xdg.configFile."gtk-4.0/settings.ini".force = true;
+  xdg.configFile."gtk-4.0/gtk.css".force = true;
+
+  # swaync's unit hangs off graphical-session.target, which Plasma also starts;
+  # there it would take the notification bus name from plasmashell.
+  xdg.configFile."systemd/user/swaync.service.d/not-plasma.conf".text = ''
+    [Unit]
+    ConditionEnvironment=!XDG_CURRENT_DESKTOP=KDE
+  '';
 
   # sway never activates graphical-session.target and that target refuses
   # manual starts, so bind a session-scoped one to it (started by autostart).
