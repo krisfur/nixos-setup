@@ -13,9 +13,9 @@ set $lockcmd ~/.config/sway/lock.sh
 output * scale 1
 # Anchor the internal panel; Sway places automatic outputs to its right.
 output eDP-1 position 0 0
-# VRR only reaches it over the laptop's HDMI port; the dock's DP->HDMI
-# converter isn't on amdgpu's VRR whitelist (vrr_capable=0).
-output "ARZ ARZOPA-27 Unknown" mode 2560x1440@144Hz adaptive_sync on
+# No adaptive_sync: the monitor blanks with VRR over direct HDMI, and the
+# dock's DP->HDMI converter isn't on amdgpu's VRR whitelist anyway.
+output "ARZ ARZOPA-27 Unknown" mode 2560x1440@144Hz
 
 font pango:JetBrainsMono Nerd Font 10
 floating_modifier $mod normal
