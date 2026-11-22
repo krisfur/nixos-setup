@@ -1,6 +1,6 @@
 # nixos-setup
 
-Declarative NixOS config: sway (tiling Wayland WM), Nord theme, Waybar, greetd login, and a Nix-managed dev toolchain (latest GCC for C++26, latest kernel). 
+Declarative NixOS config: KDE Plasma (configured through plasma-manager), Dust theme, greetd login, and a Nix-managed dev toolchain (latest GCC for C++26, latest kernel).
 
 Neovim config is pinned as a flake input, shared with non-nix machines machines.
 
@@ -96,11 +96,9 @@ fprintd-verify        # confirm it reads back
 
 Check yours is on that list first — `lsusb` shows the vendor:product ID (Synaptics readers are vendor `06cb`). On machines without a reader, skip this: `fprintd-enroll` just reports no devices and nothing else is affected.
 
-This covers `sudo` and the lock screen. On the lock screen just touch the sensor — hyprlock waits on the fingerprint and the password at the same time, so either unlocks, whichever you do first.
+This covers `sudo` and the lock screen. On Plasma's lock screen just touch the sensor; it uses the `kde-fingerprint` PAM service alongside the password one, so either unlocks.
 
 Console login and the greeter are deliberately left password-only — fprintd isn't reliably running that early in boot, and a greeter hanging on the sensor is a bad way to lose access.
-
-The lock screen is **hyprlock**, not swaylock, specifically for this. swaylock collects the password *before* running the PAM stack, so it can only check one method at a time: with `pam_fprintd` stacked first it blocks on the sensor before reading what you typed, and stacked last it's never reached unless you deliberately fail a password. hyprlock talks to fprintd over D-Bus directly, which is why `security.pam.services.hyprlock.fprintAuth` is *off* — leaving `pam_fprintd` in its stack as well makes both paths fight over the sensor.
 
 Enrolment is per-user and stored outside the store in `/var/lib/fprint`, so it's one of the few steps that can't be declarative — repeat it on each machine.
 
@@ -232,6 +230,7 @@ flake.nix                      inputs, nixosConfiguration
 hosts/nixos/                   host config + (placeholder) hardware-configuration.nix
 modules/system/                core, desktop, dev, packages
 modules/home/home.nix          home-manager: theming, git, vendored dotfiles
-config/                        vendored dotfiles (sway, waybar, fuzzel, fastfetch, ...)
+modules/home/plasma.nix        KDE Plasma settings (plasma-manager)
+config/                        vendored dotfiles (ghostty, fastfetch, pipewire, ...)
                                (neovim config comes from the neovim-config flake input)
 ```

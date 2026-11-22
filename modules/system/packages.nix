@@ -78,8 +78,9 @@ in
     xdg-terminal-exec
     networkmanagerapplet # nm-applet tray + nm-connection-editor (replaces nmtui)
     iw                 # wifi diagnostics: `iw reg get`, `iw phy` channel/band list
-    hyprlock           # lock screen (parallel password + fingerprint auth)
-    discord            # chat
+    # chat. No TTS: its --enable-speech-dispatcher spawn fails (speechd is off in
+    # desktop.nix) and dumps a SIGTRAP core every launch.
+    (discord.override { withTTS = false; })
     proton-authenticator # TOTP manager (ships its own desktop entry + icons)
     mpv                # video
     ffmpeg             # video/audio transcoding CLI
@@ -88,8 +89,8 @@ in
     gimp               # image editing
     localsend          # cross-device file sharing (firewall ports opened in core.nix)
     transmission_4-gtk # torrent client (GTK4, follows libadwaita theme)
-    bluetuith          # TUI bluetooth manager (waybar on-click)
-    btop               # TUI system monitor (waybar on-click)
+    bluetuith          # TUI bluetooth manager
+    btop               # TUI system monitor
     xarchiver          # archive GUI for thunar
     gamescope          # gaming compositor
     rpcs3              # PlayStation 3 emulator

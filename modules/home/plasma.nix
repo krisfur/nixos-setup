@@ -1,6 +1,6 @@
-{ pkgs, config, ... }:
+{ config, ... }:
 
-# KDE Plasma user settings via plasma-manager. Mirrors the sway session's
+# KDE Plasma user settings via plasma-manager. Carries over the old sway session's
 # bindings, idle/lid behaviour, and Dust look. Only keys set here are managed;
 # anything changed in System Settings persists alongside them.
 let
@@ -144,7 +144,7 @@ in
       effects.desktopSwitching.animation = "off";
     };
 
-    # Same idle timings as swayidle: lock 15 min, screen off 20, suspend 30.
+    # Idle timings carried over from sway: lock 15 min, screen off 20, suspend 30.
     kscreenlocker = {
       autoLock = true;
       timeout = 15;
@@ -191,7 +191,7 @@ in
       captureActiveWindow = "Meta+Print";
     };
 
-    # Sway's bindings. Arrows focus; Shift+arrows tile (and cross screens on a
+    # The old sway bindings. Arrows focus; Shift+arrows tile (and cross screens on a
     # repeat press); Alt+arrows resize. Desktops 1-10 replace taskbar entries.
     shortcuts = {
       kwin = {
@@ -264,15 +264,20 @@ in
       # kde-gtk-config would rewrite the home-manager GTK theme and gtk.css.
       kded5rc."Module-gtkconfig".autoload = false;
 
-      # Secrets stay in gnome-keyring (unlocked by greetd's PAM), as under sway.
-      kwalletrc.Wallet.Enabled = false;
+      # KWallet holds all secrets, unlocked at login by pam_kwallet (desktop.nix),
+      # and serves libsecret apps (gh, Helium, Proton) via the Secret Service API.
+      # Enabled is set explicitly: an earlier generation wrote false.
+      kwalletrc = {
+        Wallet.Enabled = true;
+        "org.freedesktop.secrets".apiEnabled = true;
+      };
 
       kdeglobals.General = {
         TerminalApplication = "ghostty";
         TerminalService = "com.mitchellh.ghostty.desktop";
       };
 
-      # Match sway-screenshot.sh: save to ~/Pictures/Screenshots and copy.
+      # Save to ~/Pictures/Screenshots and copy to the clipboard.
       spectaclerc = {
         General = {
           autoSaveImage = true;
@@ -280,13 +285,6 @@ in
         };
         ImageSave.imageSaveLocation = "file://${config.home.homeDirectory}/Pictures/Screenshots";
       };
-    };
-
-    # Adopt the PAM-unlocked keyring before D-Bus activates a locked second one
-    # (same race the sway autostart handles).
-    startup.startupScript.gnome-keyring = {
-      text = "${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --start --components=secrets,ssh,pkcs11";
-      runAlways = true;
     };
   };
 }

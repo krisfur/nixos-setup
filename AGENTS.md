@@ -11,7 +11,7 @@
 
 ## Layout and setup
 
-This flake defines `nixosConfigurations.nixos` for `x86_64-linux`, using nixos-unstable and Home Manager integrated into the NixOS rebuild. The configured user is `kfurman`. The desktop uses Sway, greetd, Waybar, Ghostty, and a Dust colour palette.
+This flake defines `nixosConfigurations.nixos` for `x86_64-linux`, using nixos-unstable and Home Manager integrated into the NixOS rebuild. The configured user is `kfurman`. The desktop uses KDE Plasma (configured through plasma-manager), greetd, Ghostty, and a Dust colour palette. Secrets live in KWallet, unlocked at login by `pam_kwallet`.
 
 | Path | Responsibility |
 | --- | --- |

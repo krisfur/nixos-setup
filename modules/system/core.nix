@@ -77,7 +77,7 @@
   # Auto-switch power profile on plug/unplug: performance on AC, power-saver
   # on battery. Runs once at boot for the initial state, then re-runs via the
   # udev rule below whenever the mains adapter changes state. Manual overrides
-  # (waybar's profile cycler) stick until the next plug/unplug event.
+  # (the battery widget's profile switch) stick until the next plug/unplug event.
   # Must hang off graphical.target, not multi-user.target: upstream ppd has
   # After=multi-user.target, so a multi-user-wanted unit that waits on ppd
   # (even implicitly via D-Bus activation) deadlocks boot until the 25s D-Bus

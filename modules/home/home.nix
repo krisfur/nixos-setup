@@ -3,140 +3,6 @@
 let
   configDir = ../../config;
 
-  wallpaper = "${config.xdg.configHome}/sway/wallpaper.jpg";
-  # hyprlock, not swaylock: it waits on password and fingerprint concurrently,
-  # which swaylock can't (it collects input first, then runs PAM).
-  hyprlockBin = "${pkgs.hyprlock}/bin/hyprlock --grace 0 --no-fade-in";
-
-  # systemd coalesces lock requests and waits for the compositor's locked event.
-  lockCmd = pkgs.writeShellScript "lock" ''
-    ${pkgs.systemd}/bin/systemctl --user import-environment WAYLAND_DISPLAY || exit 1
-    exec ${pkgs.systemd}/bin/systemctl --user start sway-lock.service
-  '';
-
-  # Hyprlock lacks a readiness fd; this message is emitted by its locked callback.
-  # Do not use SIGUSR2 during startup: its handler may not yet be installed.
-  lockService = pkgs.writeShellScript "sway-lock" ''
-    set -uo pipefail
-    ready=$(${pkgs.coreutils}/bin/mktemp)
-    trap '${pkgs.coreutils}/bin/rm -f "$ready"' EXIT
-    ${hyprlockBin} 2>&1 | while IFS= read -r line; do
-      printf '%s\n' "$line"
-      case "$line" in
-        *"]: onLockLocked called"|*"[LOG] onLockLocked called")
-          ${pkgs.systemd}/bin/systemd-notify --ready && printf 'ready\n' > "$ready"
-          ;;
-      esac
-    done
-    status=$?
-    # Only the locker that acquired the session may reset its fingerprint claim.
-    if [ "$status" -eq 0 ] && [ -s "$ready" ]; then
-      ${pkgs.systemd}/bin/systemctl restart fprintd.service || true
-    fi
-    exit "$status"
-  '';
-
-  # Keep the hidden panel out of the desktop, including on startup and reload.
-  lidCmd = pkgs.writeShellScript "sway-lid" ''
-    set -eu
-    state=$(${pkgs.coreutils}/bin/cat /proc/acpi/button/lid/*/state)
-    case "$state" in
-      *closed*)
-        ${pkgs.sway}/bin/swaymsg 'output eDP-1 disable'
-        if ! ${pkgs.sway}/bin/swaymsg -t get_outputs | ${pkgs.jq}/bin/jq -e \
-          'any(.[]; .name != "eDP-1" and .active)' >/dev/null; then
-          ${lockCmd}
-        fi
-        ;;
-      *open*) ${pkgs.sway}/bin/swaymsg 'output eDP-1 enable' ;;
-      *) echo "Cannot determine lid state: $state" >&2; exit 1 ;;
-    esac
-  '';
-
-  # Wine treats the X11 primary as the main display; sway never sets one, so
-  # Wine games sized themselves to the panel on an external screen.
-  xwaylandPrimaryCmd = pkgs.writeShellScript "xwayland-primary" ''
-    set -u
-    apply() {
-      # Xwayland lags sway's output events slightly.
-      sleep 1
-      out=$(${pkgs.sway}/bin/swaymsg -t get_outputs | ${pkgs.jq}/bin/jq -r \
-        'first(.[] | select(.active and .name != "eDP-1") | .name) // empty')
-      [ -n "$out" ] && ${pkgs.xrandr}/bin/xrandr --output "$out" --primary
-    }
-    apply
-    ${pkgs.sway}/bin/swaymsg -m -t subscribe '["output"]' \
-      | ${pkgs.jq}/bin/jq -c --unbuffered . | while read -r _; do apply; done
-  '';
-
-  resumeDisplaysCmd = pkgs.writeShellScript "resume-displays" ''
-    ${lidCmd}
-    ${pkgs.sway}/bin/swaymsg 'output * power on'
-  '';
-
-  # Controller input never reaches the seat, so swayidle counts a gamepad
-  # session or call as idle; exits 0 while one is active. Steam's reaper marks
-  # a running game, emulators only open audio once a game boots, and Discord
-  # only captures the mic in a call.
-  idleBusyCmd = pkgs.writeShellScript "idle-busy" ''
-    ${pkgs.procps}/bin/pgrep -f 'SteamLaunch AppId=' >/dev/null && exit 0
-    ${pkgs.pipewire}/bin/pw-dump | ${pkgs.jq}/bin/jq -e 'any(.[];
-      (.info.props? // {}) as $p
-      | ($p."application.process.binary" // "" | ascii_downcase) as $b
-      | ($p."media.class" == "Stream/Input/Audio" and ($b | contains("discord")))
-        or ($p."media.class" == "Stream/Output/Audio" and ($b | test("dolphin-emu|rpcs3"))))' >/dev/null
-  '';
-
-  idleLockCmd = pkgs.writeShellScript "idle-lock" ''
-    ${idleBusyCmd} && exit 0
-    exec ${lockCmd}
-  '';
-
-  idleDisplaysCmd = pkgs.writeShellScript "idle-displays" ''
-    ${idleBusyCmd} && exit 0
-    exec ${pkgs.sway}/bin/swaymsg 'output * power off'
-  '';
-
-  # Suspend after 30 min idle, with the same skip-while-busy guard. Media
-  # playback holds the Wayland idle inhibitor, which blocks swayidle already.
-  idleSuspendCmd = pkgs.writeShellScript "idle-suspend" ''
-    ${idleBusyCmd} && exit 0
-    exec ${pkgs.systemd}/bin/systemctl --no-block suspend
-  '';
-
-  # sway execs ~/.config/sway/autostart (see the `exec` line in the sway config).
-  # We generate it here so the helper binaries resolve to their Nix store paths.
-  autostart = pkgs.writeShellScript "sway-autostart" ''
-    # D-Bus sometimes activates a second, *locked* secrets daemon before the
-    # one pam_gnome_keyring unlocked claims the bus name — the intermittent
-    # keyring prompt after a rebuild+reboot. Re-run --start synchronously to
-    # adopt the unlocked daemon and claim org.freedesktop.secrets first.
-    eval "$(${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --start --components=secrets,ssh,pkcs11)"
-    export SSH_AUTH_SOCK
-    ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd \
-      SSH_AUTH_SOCK GNOME_KEYRING_CONTROL DISPLAY WAYLAND_DISPLAY 2>/dev/null || true
-
-    # Starts user units wanted by graphical-session.target (swaync, portals).
-    # That target refuses manual starts, hence sway-session.target which BindsTo
-    # it. Must run after the env push so those units see WAYLAND_DISPLAY.
-    ${pkgs.systemd}/bin/systemctl --user start sway-session.target
-
-    ${pkgs.swaybg}/bin/swaybg -i ${wallpaper} -m fill &
-    ${pkgs.waybar}/bin/waybar &
-    # swaync is deliberately absent: its own user unit is started by the
-    # systemctl line above, and a second launch loses the bus-name race.
-    ${pkgs.networkmanagerapplet}/bin/nm-applet --indicator &
-    ${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1 &
-    ${xwaylandPrimaryCmd} &
-    ${pkgs.swayidle}/bin/swayidle -w \
-      timeout 900 '${idleLockCmd}' \
-      timeout 1200 '${idleDisplaysCmd}' resume '${resumeDisplaysCmd}' \
-      timeout 1800 '${idleSuspendCmd}' \
-      before-sleep '${lockCmd}' \
-      after-resume '${resumeDisplaysCmd}' \
-      lock '${lockCmd}' &
-  '';
-
   # Helium browser. Not in nixpkgs; it's an auto-updating AppImage. The wrapper
   # downloads the latest release into ~/Applications on first run, then execs
   # it (binfmt handles AppImage execution). Helium self-updates thereafter.
@@ -158,7 +24,10 @@ let
     # the appimage-run sandbox (packages.nix); env vars don't survive AppRun.
     # Verify in about:gpu → "Video Acceleration Information": empty means CPU
     # decode, regardless of what the feature list above it claims.
+    # Secret Service (served by KWallet), not Chromium's native KWallet backend:
+    # the key migrated from gnome-keyring lives there, so old sessions decrypt.
     exec "$app" \
+      --password-store=gnome-libsecret \
       --enable-features=AcceleratedVideoDecodeLinuxGL,AcceleratedVideoDecodeLinuxZeroCopyGL,VaapiVideoDecodeLinuxGL,VaapiIgnoreDriverChecks \
       "$@"
   '';
@@ -244,7 +113,7 @@ in
 
   home.packages = [ helium curseforge claude pkgs.bubblewrap ];
 
-  # Desktop entry so Helium shows in fuzzel and as the default browser.
+  # Desktop entry so Helium shows in the launcher and as the default browser.
   xdg.desktopEntries.helium = {
     name = "Helium";
     genericName = "Web Browser";
@@ -327,7 +196,7 @@ in
     };
   };
 
-  # --- GTK / icon theming (replaces the sway `exec gsettings ...` lines) ---
+  # --- GTK / icon theming ---
   gtk = {
     enable = true;
     # nordic was dropped from nixpkgs (it needed gtk-engine-murrine, a GTK2
@@ -425,9 +294,6 @@ in
     "Gtk/CursorThemeName" = "Bibata-Modern-Classic";
   };
 
-  # Qt apps follow GTK under sway via QT_QPA_PLATFORMTHEME in the sway session
-  # (modules/system/desktop.nix); home-manager's qt module would leak it into Plasma.
-
   # Plasma's GTK sync and kconf_update scripts may replace these store symlinks;
   # force lets the next activation restore them instead of aborting.
   gtk.gtk2.force = true;
@@ -435,36 +301,6 @@ in
   xdg.configFile."gtk-3.0/gtk.css".force = true;
   xdg.configFile."gtk-4.0/settings.ini".force = true;
   xdg.configFile."gtk-4.0/gtk.css".force = true;
-
-  # swaync's unit hangs off graphical-session.target, which Plasma also starts;
-  # there it would take the notification bus name from plasmashell.
-  xdg.configFile."systemd/user/swaync.service.d/not-plasma.conf".text = ''
-    [Unit]
-    ConditionEnvironment=!XDG_CURRENT_DESKTOP=KDE
-  '';
-
-  # sway never activates graphical-session.target and that target refuses
-  # manual starts, so bind a session-scoped one to it (started by autostart).
-  systemd.user.targets.sway-session = {
-    Unit = {
-      Description = "sway compositor session";
-      BindsTo = [ "graphical-session.target" ];
-    };
-  };
-
-  systemd.user.services.sway-lock = {
-    Unit = {
-      Description = "Lock the Sway session";
-      PartOf = [ "graphical-session.target" ];
-      After = [ "graphical-session.target" ];
-    };
-    Service = {
-      Type = "notify";
-      NotifyAccess = "all";
-      ExecStart = lockService;
-      TimeoutStartSec = "30s";
-    };
-  };
 
   # Keep global instructions separate from this repository's AGENTS.md.
   home.file.".claude/CLAUDE.md" = {
@@ -491,8 +327,7 @@ in
     EOF
   '';
 
-  # Modern cursor (the default is the chunky X11 fallback). sway also picks it
-  # up via `seat seat0 xcursor_theme Bibata-Modern-Classic` in config/sway/config.
+  # Modern cursor (the default is the chunky X11 fallback).
   home.pointerCursor = {
     enable = true;
     gtk.enable = true;
@@ -528,118 +363,15 @@ in
     "fastfetch/config.jsonc".source = "${configDir}/fastfetch/config.jsonc";
     "fastfetch/logo.png".source = "${configDir}/fastfetch/logo.png";
 
-    # waybar (wlr modules, NixOS paths)
-    "waybar/config".source = "${configDir}/waybar/config";
-    "waybar/style.css".source = "${configDir}/waybar/style.css";
-
     # ghostty terminal (default window size bumped so btop fits)
     "ghostty/config".source = "${configDir}/ghostty/config";
-
-    # fuzzel launcher
-    "fuzzel/fuzzel.ini".source = "${configDir}/fuzzel/fuzzel.ini";
-
-    # notifications
-    "swaync/style.css".source = "${configDir}/swaync/style.css";
-
-    # Lock screen. Generated, not vendored, so the wallpaper path resolves.
-    # Colours mirror the waybar pills in config/waybar/style.css.
-    "hypr/hyprlock.conf".text = ''
-      background {
-          monitor =
-          path = ${wallpaper}
-          blur_passes = 3
-          blur_size = 7
-      }
-
-      label {
-          monitor =
-          # Polled far faster than a clock needs: this timer is the only thing
-          # repainting the input field, which re-evaluates its placeholder only
-          # on redraw, so it sets how fast the fingerprint icon appears.
-          text = cmd[update:500] date +"%H:%M"
-          color = rgb(f2e8d5)
-          font_size = 72
-          font_family = JetBrainsMono Nerd Font
-          position = 0, 150
-          halign = center
-          valign = center
-      }
-
-      label {
-          monitor =
-          text = cmd[update:30000] date +"%A, %e %B"
-          color = rgb(ddd0ba)
-          font_size = 16
-          font_family = JetBrainsMono Nerd Font
-          position = 0, 80
-          halign = center
-          valign = center
-      }
-
-      input-field {
-          monitor =
-          size = 200, 50
-          rounding = 12
-          outline_thickness = 1
-          inner_color = rgb(2b2520)
-          outer_color = rgb(574c40)
-          check_color = rgb(c9a06b)
-          fail_color = rgb(b0574a)
-          font_color = rgb(f2e8d5)
-          font_family = JetBrainsMono Nerd Font
-          dots_size = 0.25
-          dots_spacing = 0.3
-          dots_rounding = -1
-          # Static, not $FPRINTPROMPT: that variable also carries hyprlock's
-          # retry prose, which rendered at 24pt and shoved the layout around
-          # after any failed scan.
-          placeholder_text = <span size="24pt"> 󰌾 <span alpha="60%">/</span> 󰈷 </span>
-          fail_text = <i>$FAIL</i>
-          fade_on_empty = false
-      }
-
-      auth {
-          fingerprint {
-              enabled = true
-              # Wiki-undocumented (hyprlock#625). The 250ms default burns every
-              # retry before the reader is back from a long suspend.
-              retry_delay = 2000
-          }
-      }
-    '';
 
     # Picks ghostty as the terminal for Terminal=true desktop entries, via
     # xdg-terminal-exec (packages.nix).
     "xdg-terminals.list".text = "com.mitchellh.ghostty.desktop\n";
 
-    # sway compositor
-    "sway/config".source = "${configDir}/sway/config";
-    "sway/wallpaper.jpg".source = "${configDir}/wallpaper/wallpaper.jpg";
-    # All lock paths share the supervised locker.
-    "sway/lock.sh" = {
-      source = lockCmd;
-      executable = true;
-    };
-    "sway/lid.sh" = {
-      source = lidCmd;
-      executable = true;
-    };
-
-    "sway/sway-screenshot.sh" = {
-      source = "${configDir}/sway/sway-screenshot.sh";
-      executable = true;
-    };
-    "sway/cycle-workspace.sh" = {
-      source = "${configDir}/sway/cycle-workspace.sh";
-      executable = true;
-    };
-    "sway/autostart".source = autostart;
-
     # neovim (flake input -> github.com/krisfur/neovim-config)
     "nvim/init.lua".source = "${inputs.neovim-config}/init.lua";
-
-    # mpv (one line: stops it fighting the sway floating rule over height)
-    "mpv/mpv.conf".source = "${configDir}/mpv/mpv.conf";
   };
 
   # Speaker DSP: the P14s speakers are tuned for Windows' Dolby driver and sound
