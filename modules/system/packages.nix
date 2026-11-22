@@ -9,14 +9,10 @@ let
     hash = "sha256-iU37J+M0QIY383aJV6Yv7LlPwXcuy7ZjgLJlkjDt7no=";
   };
   # Upstream uses DwarFS, which appimageTools.extract does not support.
-  # dwarfs 0.15.8 archive-format tests abort (pwb/raw/xar); skip that group, directory extraction is unaffected.
-  dwarfs = pkgs.dwarfs.overrideAttrs (old: {
-    env = old.env // {
-      GTEST_FILTER = old.env.GTEST_FILTER + ":dwarfs/dwarfsextract_format_test.basic/*";
-    };
-  });
+  # Stock dwarfs, so it comes from the binary cache: any override changes its
+  # hash and forces a long source build on every nixpkgs update.
   rpcs3Contents = pkgs.runCommand "rpcs3-0.0.42-20053-extracted" {
-    nativeBuildInputs = [ dwarfs ];
+    nativeBuildInputs = [ pkgs.dwarfs ];
   } ''
     mkdir -p "$out"
     dwarfsextract -i ${rpcs3Source} -o "$out" --image-offset auto
