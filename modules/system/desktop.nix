@@ -75,6 +75,9 @@ in
   # KDE Plasma, offered alongside sway. User settings in modules/home/plasma.nix.
   services.desktopManager.plasma6.enable = true;
   services.displayManager.sessionPackages = [ swaySessionEntry ];
+  # Plasma turns on the KDE PIM stack (Akonadi, KMail, Kontact, Merkuro and its
+  # contacts tray widget) by default; none of it is used here.
+  programs.kde-pim.enable = false;
 
   # Login: greetd + tuigreet. F3 picks the session (sway or Plasma) and
   # --remember-session keeps the choice; sway is the fallback.

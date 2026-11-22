@@ -57,14 +57,16 @@ in
         floating = true;
         height = 44;
         widgets = [
-          "org.kde.plasma.kickoff"
+          # Dust-coloured NixOS logo, shared with fastfetch.
+          { kickoff.icon = "${../../config/fastfetch/logo.png}"; }
           {
             pager.general = {
               showWindowOutlines = true;
               showApplicationIconsOnWindowOutlines = true;
             };
           }
-          "org.kde.plasma.icontasks"
+          # No pinned apps (stock pins Settings, Dolphin, browser); shortcuts cover them.
+          { iconTasks.launchers = [ ]; }
           "org.kde.plasma.marginsseparator"
           "org.kde.plasma.systemtray"
           "org.kde.plasma.digitalclock"
