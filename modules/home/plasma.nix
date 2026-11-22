@@ -21,7 +21,11 @@ let
     "("
     ")"
   ];
+  # Desktops beyond desktopCount are written too, unbound, so keys left from a
+  # larger count don't linger (only managed keys are ever rewritten).
+  desktopCount = 3;
   desktops = builtins.genList (i: i + 1) 10;
+  used = n: n <= desktopCount;
   digit = n: toString (if n == 10 then 0 else n);
   perDesktop = f: builtins.listToAttrs (map f desktops);
 in
@@ -54,7 +58,12 @@ in
         height = 44;
         widgets = [
           "org.kde.plasma.kickoff"
-          "org.kde.plasma.pager"
+          {
+            pager.general = {
+              showWindowOutlines = true;
+              showApplicationIconsOnWindowOutlines = true;
+            };
+          }
           "org.kde.plasma.icontasks"
           "org.kde.plasma.marginsseparator"
           "org.kde.plasma.systemtray"
@@ -96,7 +105,7 @@ in
 
     kwin = {
       virtualDesktops = {
-        number = 10;
+        number = desktopCount;
         rows = 1;
       };
       # Plasma 6.1's edge barrier fights moving the pointer to the side screen.
@@ -183,19 +192,24 @@ in
       }
       // perDesktop (n: {
         name = "Switch to Desktop ${toString n}";
-        value = "Meta+${digit n}";
+        value = if used n then "Meta+${digit n}" else [ ];
       })
       // perDesktop (n: {
         name = "Window to Desktop ${toString n}";
-        value = [
-          "Meta+Shift+${digit n}"
-          "Meta+${builtins.elemAt shiftedDigits (n - 1)}"
-        ];
+        value =
+          if used n then
+            [
+              "Meta+Shift+${digit n}"
+              "Meta+${builtins.elemAt shiftedDigits (n - 1)}"
+            ]
+          else
+            [ ];
       });
 
+      # Meta+N goes to desktops where one exists, else back to KDE's taskbar default.
       plasmashell = perDesktop (n: {
         name = "activate task manager entry ${toString n}";
-        value = [ ];
+        value = if used n then [ ] else "Meta+${digit n}";
       });
 
       ksmserver."Log Out" = [
