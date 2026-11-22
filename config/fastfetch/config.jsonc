@@ -107,8 +107,11 @@
             "key": "│ ",
         },
         {
-            "type": "de",
+            // Not "de": on NixOS it finds no session file and runs
+            // `plasmashell --version` (~300 ms). Version comes from the store path.
+            "type": "command",
             "key": "│ └─ ",
+            "text": "[ \"$XDG_CURRENT_DESKTOP\" = KDE ] && echo \"KDE Plasma $(readlink -f \"$(command -v plasmashell)\" | sed -n 's|.*plasma-workspace-\\([0-9.]*\\)/.*|\\1|p')\"",
         },
         {
             "type": "custom",

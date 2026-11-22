@@ -54,7 +54,8 @@ in
     panels = [
       {
         location = "bottom";
-        floating = true;
+        # Not floating: the floating margin pushed the launcher in from the edge.
+        floating = false;
         height = 44;
         widgets = [
           # Dust-coloured NixOS logo, shared with fastfetch.
@@ -68,7 +69,13 @@ in
           # No pinned apps (stock pins Settings, Dolphin, browser); shortcuts cover them.
           { iconTasks.launchers = [ ]; }
           "org.kde.plasma.marginsseparator"
-          "org.kde.plasma.systemtray"
+          # Stock presets: ring charts of CPU and RAM %, like waybar's hardware group.
+          "org.kde.plasma.systemmonitor.cpu"
+          "org.kde.plasma.systemmonitor.memory"
+          # plasma-manager can't configure tray items yet (items.configs is a
+          # no-op), so the battery sits on the panel and the tray's copy is hidden.
+          { systemTray.items.hidden = [ "org.kde.plasma.battery" ]; }
+          { battery.showPercentage = true; }
           "org.kde.plasma.digitalclock"
           "org.kde.plasma.showdesktop"
         ];
@@ -113,6 +120,8 @@ in
       # Plasma 6.1's edge barrier fights moving the pointer to the side screen.
       edgeBarrier = 0;
       cornerBarrier = false;
+      # Instant desktop switches.
+      effects.desktopSwitching.animation = "off";
     };
 
     # Same idle timings as swayidle: lock 15 min, screen off 20, suspend 30.
@@ -144,7 +153,9 @@ in
       launch-terminal = {
         name = "Launch Ghostty";
         key = "Meta+Return";
-        command = "ghostty";
+        # Asks the running instance over D-Bus (or D-Bus-activates one) rather
+        # than initialising GTK in a new process first: ~150 ms vs ~270 ms.
+        command = "ghostty +new-window";
       };
       launch-browser = {
         name = "Launch Helium";

@@ -249,7 +249,11 @@ in
     name = "Helium";
     genericName = "Web Browser";
     exec = "helium %U";
-    icon = "applications-internet";
+    # Upstream logo, pinned: the self-updating AppImage's own icon isn't installed.
+    icon = "${pkgs.fetchurl {
+      url = "https://raw.githubusercontent.com/imputnet/helium/6881a552278c3c2c8ab56163bed3c3346dbf0fb8/resources/branding/product_logo.svg";
+      hash = "sha256-3oNc4omimGTv7xHLpQ6HaXrUaGj5J4cgkaO36q+zHWI=";
+    }}";
     categories = [ "Network" "WebBrowser" ];
     mimeType = [ "text/html" "x-scheme-handler/http" "x-scheme-handler/https" ];
   };
