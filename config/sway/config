@@ -13,6 +13,9 @@ set $lockcmd ~/.config/sway/lock.sh
 output * scale 1
 # Anchor the internal panel; Sway places automatic outputs to its right.
 output eDP-1 position 0 0
+# VRR only reaches it over the laptop's HDMI port; the dock's DP->HDMI
+# converter isn't on amdgpu's VRR whitelist (vrr_capable=0).
+output "ARZ ARZOPA-27 Unknown" mode 2560x1440@144Hz adaptive_sync on
 
 font pango:JetBrainsMono Nerd Font 10
 floating_modifier $mod normal
@@ -150,3 +153,6 @@ for_window [class="^(imv|mpv|org\.pulseaudio\.pavucontrol)$"] floating enable, r
 # attach to the running process and paid a ~3.4s cold start instead of ~0.4s.
 # ghostty's `title` is fixed by the flag, so the app can't rename the window.
 for_window [app_id="^com\.mitchellh\.ghostty$" title="^(btop|bluetuith)$"] floating enable, resize set width 50 ppt height 75 ppt, move position center
+# WoW's own fullscreen breaks its UI under Proton; a sway fullscreen keeps it
+# windowed to the game while allowing direct scanout and VRR.
+for_window [title="^World of Warcraft$"] fullscreen enable
