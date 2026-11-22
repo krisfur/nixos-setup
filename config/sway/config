@@ -153,6 +153,3 @@ for_window [class="^(imv|mpv|org\.pulseaudio\.pavucontrol)$"] floating enable, r
 # attach to the running process and paid a ~3.4s cold start instead of ~0.4s.
 # ghostty's `title` is fixed by the flag, so the app can't rename the window.
 for_window [app_id="^com\.mitchellh\.ghostty$" title="^(btop|bluetuith)$"] floating enable, resize set width 50 ppt height 75 ppt, move position center
-# WoW's own fullscreen breaks its UI under Proton; a sway fullscreen keeps it
-# windowed to the game while allowing direct scanout and VRR.
-for_window [title="^World of Warcraft$"] fullscreen enable

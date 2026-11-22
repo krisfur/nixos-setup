@@ -53,6 +53,22 @@ let
     esac
   '';
 
+  # Wine treats the X11 primary as the main display; sway never sets one, so
+  # Wine games sized themselves to the panel on an external screen.
+  xwaylandPrimaryCmd = pkgs.writeShellScript "xwayland-primary" ''
+    set -u
+    apply() {
+      # Xwayland lags sway's output events slightly.
+      sleep 1
+      out=$(${pkgs.sway}/bin/swaymsg -t get_outputs | ${pkgs.jq}/bin/jq -r \
+        'first(.[] | select(.active and .name != "eDP-1") | .name) // empty')
+      [ -n "$out" ] && ${pkgs.xrandr}/bin/xrandr --output "$out" --primary
+    }
+    apply
+    ${pkgs.sway}/bin/swaymsg -m -t subscribe '["output"]' \
+      | ${pkgs.jq}/bin/jq -c --unbuffered . | while read -r _; do apply; done
+  '';
+
   resumeDisplaysCmd = pkgs.writeShellScript "resume-displays" ''
     ${lidCmd}
     ${pkgs.sway}/bin/swaymsg 'output * power on'
@@ -111,6 +127,7 @@ let
     # systemctl line above, and a second launch loses the bus-name race.
     ${pkgs.networkmanagerapplet}/bin/nm-applet --indicator &
     ${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1 &
+    ${xwaylandPrimaryCmd} &
     ${pkgs.swayidle}/bin/swayidle -w \
       timeout 900 '${idleLockCmd}' \
       timeout 1200 '${idleDisplaysCmd}' resume '${resumeDisplaysCmd}' \
