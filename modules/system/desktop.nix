@@ -97,7 +97,10 @@
 
   # KWallet unlocks with the login password via pam_kwallet5, which Plasma adds
   # to the `login` PAM service; greetd's stack includes `login`. Needs the
-  # wallet to be "kdewallet" with the login password.
+  # wallet to be "kdewallet" with the login password. force_run: greetd opens
+  # the PAM session before Plasma exists, so pam_kwallet5 otherwise logs "not a
+  # graphical session" and never hands the password over.
+  security.pam.services.login.kwallet.forceRun = true;
 
   # Trash, mounting and MTP for GTK apps (Dolphin uses KIO instead).
   services.gvfs.enable = true;

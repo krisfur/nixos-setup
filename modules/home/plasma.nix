@@ -268,7 +268,12 @@ in
       # and serves libsecret apps (gh, Helium, Proton) via the Secret Service API.
       # Enabled is set explicitly: an earlier generation wrote false.
       kwalletrc = {
-        Wallet.Enabled = true;
+        # pam_kwallet5 only unlocks "kdewallet"; the Secret Service migration
+        # had created and defaulted to "Default Keyring".
+        Wallet = {
+          Enabled = true;
+          "Default Wallet" = "kdewallet";
+        };
         "org.freedesktop.secrets".apiEnabled = true;
       };
 
@@ -287,4 +292,12 @@ in
       };
     };
   };
+
+  # Both units stop in parallel at logout. The panel's CPU/RAM widget then tries
+  # to reactivate ksystemstats, is refused, and plasmashell hung 40 s until
+  # SIGKILL. Ordering After= makes plasmashell stop first (stops run in reverse).
+  xdg.configFile."systemd/user/plasma-plasmashell.service.d/stop-before-ksystemstats.conf".text = ''
+    [Unit]
+    After=plasma-ksystemstats.service
+  '';
 }
