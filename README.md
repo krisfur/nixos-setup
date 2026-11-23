@@ -2,7 +2,7 @@
 
 Declarative NixOS config: KDE Plasma (configured through plasma-manager), Dust theme, greetd login, and a Nix-managed dev toolchain (latest GCC for C++26, latest kernel).
 
-Neovim config is pinned as a flake input, shared with non-nix machines machines.
+Neovim config is pinned as a flake input, shared with non-NixOS machines.
 
 Edit the global instructions in [config/claude/instructions.md](config/claude/instructions.md). Home Manager installs this as `~/.claude/CLAUDE.md`; rebuild and start a new Claude Code session to apply changes. Repository-specific instructions remain in `AGENTS.md`, which current Claude Code versions read directly.
 
@@ -79,11 +79,15 @@ Boot the minimal ISO. You start as user `nixos` (no password); prefix commands w
    reboot
    ```
 
-After reboot, log in as `kfurman` with password `changeme` and immediately change it:
+After reboot, change the default password (`changeme`) **before** the first Plasma login. At the greeter press `Ctrl+Alt+F2`, log in as `kfurman` on the text console, run:
 
 ```bash
 passwd
 ```
+
+then `exit`, return to the greeter with `Ctrl+Alt+F1`, and log in.
+
+The order matters because KWallet holds secrets (browser keys, `gh` token, Proton Authenticator) and is unlocked at login by `pam_kwallet` with the login password. Its wallet is created from the password at the first graphical login. If KWallet asks to create one, choose the classic Blowfish wallet and your login password. If you change the login password later, change the wallet password to match in KWalletManager, or it stops unlocking automatically.
 
 ### Fingerprint reader (optional, hardware permitting)
 
@@ -129,9 +133,9 @@ sudo nix flake update --flake /etc/nixos-setup
 sudo nixos-rebuild switch --flake '/etc/nixos-setup#nixos'
 ```
 
-Commit the changed `flake.lock` afterward so the new versions are pinned/shared. 
+`flake.lock` is machine-local: it stays uncommitted, and the shared remote intentionally has none. Git flakes ignore untracked files, so keep it visible to Nix with an intent-to-add entry (`sudo git -C /etc/nixos-setup add -N flake.lock`) rather than committing it.
 
-Claude Code and Helium use writable downloads managed by wrappers in `modules/home/home.nix`, so their application versions are separate from `flake.lock`. Claude Code installs on first launch into `~/.local/bin` using the official native installer and runs through `nix-ld`. It updates automatically; use `claude update` for an immediate update. Its global instructions and Dust theme are managed through Home Manager.
+Claude Code, Helium and CurseForge use writable downloads managed by wrappers in `modules/home/home.nix`, so their application versions are separate from `flake.lock`. Claude Code installs on first launch into `~/.local/bin` using the official native installer and runs through `nix-ld`. It updates automatically; use `claude update` for an immediate update. Its global instructions and Dust theme are managed through Home Manager.
 
 To reclaim disk from old generations:
 
@@ -144,6 +148,12 @@ To roll back a bad update, pick a previous generation in the boot menu, or:
 ```bash
 sudo nixos-rebuild switch --rollback
 ```
+
+## Desktop
+
+KDE Plasma's settings (shortcuts, panel, input, power, lock screen, Dust look) are declared in `modules/home/plasma.nix` through [plasma-manager](https://github.com/nix-community/plasma-manager). Only the keys declared there are managed: changes made in System Settings persist alongside them, and a key removed from the file keeps its last value until set explicitly.
+
+Monitor layout, refresh rate, primary display and adaptive sync are not declarative: KScreen stores them per screen combination, so set them in System Settings → Display on each machine.
 
 ## Add a package
 

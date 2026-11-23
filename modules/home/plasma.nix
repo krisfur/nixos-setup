@@ -69,8 +69,8 @@ in
           # No pinned apps (stock pins Settings, Dolphin, browser); shortcuts cover them.
           { iconTasks.launchers = [ ]; }
           "org.kde.plasma.marginsseparator"
-          # Labelled CPU / RAM rows like waybar's hardware group; the stock ring
-          # presets were unlabelled and indistinguishable.
+          # Labelled CPU / RAM rows; the stock ring presets were unlabelled and
+          # indistinguishable.
           {
             systemMonitor = {
               displayStyle = "org.kde.ksysguard.textonly";

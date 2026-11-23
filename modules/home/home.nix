@@ -150,8 +150,8 @@ in
     settings.StartupWMClass = "CurseForge";
   };
   # NOT xdg.mimeApps: that symlinks mimeapps.list into the store read-only, and
-  # every "open with -> set as default" writes through GIO to that same file, so
-  # Thunar (and any other file manager) fails with EROFS. Seed a real file
+  # every "open with -> set as default" writes to that same file (GIO and KDE
+  # alike), so file managers fail with EROFS. Seed a real file
   # instead and enforce only the keys we care about, leaving whatever the file
   # manager adds intact.
   home.activation.mimeDefaults = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -208,13 +208,13 @@ in
     };
     gtk4.theme = null;
 
-    # Plain GTK4 apps (pavucontrol) don't follow the dconf color-scheme — that's
+    # Plain GTK4 apps (no libadwaita) don't follow the dconf color-scheme — that's
     # libadwaita behaviour — so they come up light without this.
     gtk3.extraConfig.gtk-application-prefer-dark-theme = true;
     gtk4.extraConfig.gtk-application-prefer-dark-theme = true;
 
     # GTK3 has no accent-color setting, so adw-gtk3's blue selection shows
-    # through on GTK3 menus (nm-applet). Override the named colours instead.
+    # through on GTK3 menus (e.g. GIMP). Override the named colours instead.
     gtk3.extraCss = ''
       @define-color theme_selected_bg_color #c9a06b;
       @define-color theme_selected_fg_color #1e1a16;
@@ -240,7 +240,7 @@ in
 
     # Focus rings, scoped to real controls. A bare `:focus-visible` also matches
     # ghostty's terminal widget, which fills the window — that drew a ring in
-    # the same colour as the sway border just inside it, so the window looked
+    # the same colour as the (then sway) window border just inside it, so it looked
     # like it randomly grew a thicker border while typing.
     gtk4.extraCss = ''
       button:focus-visible,
