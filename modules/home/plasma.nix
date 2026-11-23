@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, lib, pkgs, ... }:
 
 # KDE Plasma user settings via plasma-manager. Carries over the old sway session's
 # bindings, idle/lid behaviour, and Dust look. Only keys set here are managed;
@@ -277,10 +277,17 @@ in
         "org.freedesktop.secrets".apiEnabled = true;
       };
 
-      kdeglobals.General = {
-        TerminalApplication = "ghostty";
-        TerminalService = "com.mitchellh.ghostty.desktop";
+      kdeglobals = {
+        General = {
+          TerminalApplication = "ghostty";
+          TerminalService = "com.mitchellh.ghostty.desktop";
+        };
+        # Instant animations everywhere (System Settings' speed slider at max).
+        KDE.AnimationDurationFactor = 0;
       };
+
+      # X11 apps follow the panel's 110% (see panelScale below).
+      kwinrc.Xwayland.Scale = 1.1;
 
       # Save to ~/Pictures/Screenshots and copy to the clipboard.
       spectaclerc = {
@@ -299,5 +306,30 @@ in
   xdg.configFile."systemd/user/plasma-plasmashell.service.d/stop-before-ksystemstats.conf".text = ''
     [Unit]
     After=plasma-ksystemstats.service
+  '';
+
+  # Built-in panel at 110%. KWin owns kwinoutputconfig.json (per-screen entries,
+  # rewritten on display changes), so patch only eDP scales instead of managing
+  # the file. Takes effect at next login; a fresh machine needs one login first.
+  home.activation.panelScale = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run ${pkgs.python3}/bin/python3 - "${config.xdg.configHome}/kwinoutputconfig.json" <<'EOF'
+    import json, os, sys
+    path = sys.argv[1]
+    if not os.path.exists(path):
+        sys.exit(0)
+    with open(path) as f:
+        cfg = json.load(f)
+    changed = False
+    for section in cfg:
+        if section.get("name") != "outputs":
+            continue
+        for out in section.get("data", []):
+            if out.get("connectorName", "").startswith("eDP") and out.get("scale") != 1.1:
+                out["scale"] = 1.1
+                changed = True
+    if changed:
+        with open(path, "w") as f:
+            json.dump(cfg, f, indent=4)
+    EOF
   '';
 }
