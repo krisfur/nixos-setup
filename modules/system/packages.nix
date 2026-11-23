@@ -76,7 +76,6 @@ in
     # glib checks xdg-terminal-exec before falling back to a hardcoded terminal
     # list. Ghostty is selected via ~/.config/xdg-terminals.list (home.nix).
     xdg-terminal-exec
-    networkmanagerapplet # nm-applet tray + nm-connection-editor (replaces nmtui)
     iw                 # wifi diagnostics: `iw reg get`, `iw phy` channel/band list
     # chat. No TTS: its --enable-speech-dispatcher spawn fails (speechd is off in
     # desktop.nix) and dumps a SIGTRAP core every launch.
@@ -84,14 +83,11 @@ in
     proton-authenticator # TOTP manager (ships its own desktop entry + icons)
     mpv                # video
     ffmpeg             # video/audio transcoding CLI
-    imv                # image viewer
     viu                # terminal image preview
     gimp               # image editing
     localsend          # cross-device file sharing (firewall ports opened in core.nix)
     transmission_4-gtk # torrent client (GTK4, follows libadwaita theme)
-    bluetuith          # TUI bluetooth manager
     btop               # TUI system monitor
-    xarchiver          # archive GUI for thunar
     gamescope          # gaming compositor
     rpcs3              # PlayStation 3 emulator
     dolphin-emu        # GameCube/Wii emulator

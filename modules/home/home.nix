@@ -177,9 +177,8 @@ in
 
   # Shadows the stock desktop entry, keeping its X-TerminalArg* keys. The
   # single-instance setting lives in config/ghostty/config, not on the exec
-  # line, so every launch path agrees - except the Thunar terminal helper, which
-  # must override it to keep its working directory (see the .desktop in
-  # config/xfce4/helpers).
+  # line, so every launch path agrees. Ghostty 1.4 keeps a forwarded launch's
+  # working directory, so Dolphin's Open Terminal Here needs no override.
   xdg.desktopEntries."com.mitchellh.ghostty" = {
     name = "Ghostty";
     genericName = "Terminal Emulator";
@@ -286,14 +285,6 @@ in
     accent-color = "orange";
   };
 
-  # Thunar is GTK3 and falls back to gtk-3.0/settings.ini while the xsettings
-  # channel is unset, but pin it so an xfconf write can't silently override.
-  xfconf.settings.xsettings = {
-    "Net/ThemeName" = "adw-gtk3-dark";
-    "Net/IconThemeName" = "Papirus-Dark";
-    "Gtk/CursorThemeName" = "Bibata-Modern-Classic";
-  };
-
   # Plasma's GTK sync and kconf_update scripts may replace these store symlinks;
   # force lets the next activation restore them instead of aborting.
   gtk.gtk2.force = true;
@@ -382,14 +373,6 @@ in
   # desktop.nix.
   xdg.configFile."pipewire/pipewire.conf.d/99-thinkpad-unsuck.conf".source =
     "${configDir}/pipewire/thinkpad-unsuck.conf";
-
-  # Thunar resolves Open Terminal Here through exo-open -> xfce4-mime-helper,
-  # which reads this pair: helpers.rc names the helper, the .desktop defines how
-  # to run it. Both packages come from desktop.nix.
-  xdg.dataFile."xfce4/helpers/ghostty.desktop".source =
-    "${configDir}/xfce4/helpers/ghostty.desktop";
-
-  xdg.configFile."xfce4/helpers.rc".text = "TerminalEmulator=ghostty\n";
 
   # KDE colour scheme in the Dust palette, for Qt apps that pick a scheme by
   # name rather than following the platform theme.

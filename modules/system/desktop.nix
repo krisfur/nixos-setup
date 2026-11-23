@@ -16,20 +16,12 @@
   # Desktop utilities alongside Plasma.
   environment.systemPackages = with pkgs; [
     wl-clipboard
-    pavucontrol
     libnotify
     xdg-utils
     # Theme + icons referenced by the home-manager configs.
     adw-gtk3
     # Recoloured by the overlay above.
     papirus-icon-theme
-    # Thunar's Open Terminal Here / Run In Terminal shell out to a hardcoded
-    # `exo-open --launch TerminalEmulator`, which in Xfce 4.20 delegates to
-    # xfce4-mime-helper. programs.thunar pulls in neither, so without both the
-    # menu entries fail silently. The ghostty helper they resolve to is in
-    # home.nix.
-    xfce4-exo
-    xfce4-settings
   ];
 
   # KDE Plasma. User settings in modules/home/plasma.nix.
@@ -37,6 +29,13 @@
   # Plasma turns on the KDE PIM stack (Akonadi, KMail, Kontact, Merkuro and its
   # contacts tray widget) by default; none of it is used here.
   programs.kde-pim.enable = false;
+  # Ghostty is the terminal and nothing serves remote desktops or reads KDE's
+  # handbook here. Elisa stays: it plays a folder of music better than mpv.
+  environment.plasma6.excludePackages = with pkgs.kdePackages; [
+    konsole
+    khelpcenter
+    krdp
+  ];
 
   # Login: greetd + tuigreet, launching Plasma (same command as its session file).
   services.greetd = {
@@ -100,11 +99,8 @@
   # to the `login` PAM service; greetd's stack includes `login`. Needs the
   # wallet to be "kdewallet" with the login password.
 
-  # Thunar file manager + thumbnails + trash/mounting.
-  programs.thunar.enable = true;
-  programs.xfconf.enable = true;
+  # Trash, mounting and MTP for GTK apps (Dolphin uses KIO instead).
   services.gvfs.enable = true;
-  services.tumbler.enable = true;
 
   fonts.packages = with pkgs; [
     nerd-fonts.jetbrains-mono
