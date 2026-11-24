@@ -59,6 +59,9 @@ in
     panels = [
       {
         location = "bottom";
+        # One per screen connected when this script runs (it reruns only when the
+        # panel definition changes); Plasma then keeps each per screen.
+        screen = "all";
         # Not floating: the floating margin pushed the launcher in from the edge.
         floating = false;
         height = 44;
@@ -323,6 +326,11 @@ in
       };
     };
   };
+
+  # Test: with both screens on, focused fullscreen WoW stalled ~40 ms once a
+  # second (one screen was fine). No direct scanout keeps KWin compositing it,
+  # avoiding per-commit plane changes across both screens. Costs one GPU copy.
+  systemd.user.sessionVariables.KWIN_DRM_NO_DIRECT_SCANOUT = "1";
 
   # Both units stop in parallel at logout. The panel's CPU/RAM widget then tries
   # to reactivate ksystemstats, is refused, and plasmashell hung 40 s until
