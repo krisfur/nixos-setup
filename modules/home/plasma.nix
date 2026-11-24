@@ -330,6 +330,30 @@ in
   # copy per frame for fullscreen games.
   systemd.user.sessionVariables.KWIN_DRM_NO_DIRECT_SCANOUT = "1";
 
+  # The same panel as an Add Panel template ("Dust Panel"), for other screens:
+  # Plasma has no clone-panel action, and its stock template is KDE's layout.
+  # Generated from plasma-manager's panel script minus its remove-all line, so
+  # both stay in sync; the build fails if that line ever changes upstream.
+  xdg.dataFile."plasma/layout-templates/org.kfurman.dustPanel/metadata.json".text = builtins.toJSON {
+    KPackageStructure = "Plasma/LayoutTemplate";
+    KPlugin = {
+      Id = "org.kfurman.dustPanel";
+      Name = "Dust Panel";
+      Description = "The panel from modules/home/plasma.nix";
+      EnabledByDefault = true;
+    };
+    X-Plasma-ContainmentCategories = [ "panel" ];
+    X-Plasma-Shell = "plasmashell";
+  };
+  xdg.dataFile."plasma/layout-templates/org.kfurman.dustPanel/contents/layout.js".text =
+    let
+      script = config.programs.plasma.startup.desktopScript.panels.text;
+      removeAll = "panels().forEach((panel) => panel.remove());";
+    in
+    assert lib.assertMsg (lib.hasInfix removeAll script)
+      "plasma-manager's panel script changed; check the Dust Panel template";
+    lib.replaceStrings [ removeAll ] [ "" ] script;
+
   # Both units stop in parallel at logout. The panel's CPU/RAM widget then tries
   # to reactivate ksystemstats, is refused, and plasmashell hung 40 s until
   # SIGKILL. Ordering After= makes plasmashell stop first (stops run in reverse).
