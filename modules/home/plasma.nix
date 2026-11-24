@@ -23,7 +23,7 @@ let
   ];
   # Desktops beyond desktopCount are written too, unbound, so keys left from a
   # larger count don't linger (only managed keys are ever rewritten).
-  desktopCount = 3;
+  desktopCount = 2;
   desktops = builtins.genList (i: i + 1) 10;
   used = n: n <= desktopCount;
   digit = n: toString (if n == 10 then 0 else n);
@@ -44,6 +44,11 @@ in
       };
       inherit wallpaper;
     };
+
+    # The wallpaper script otherwise runs only when its content changes, so a
+    # screen first seen later (the external monitor) kept KDE's stock image.
+    # Plasma keeps a desktop per screen ever seen, so every login covers them.
+    startup.desktopScript."wallpaper_picture".runAlways = true;
 
     fonts.fixedWidth = {
       family = "JetBrainsMono Nerd Font";
@@ -66,8 +71,15 @@ in
               showApplicationIconsOnWindowOutlines = true;
             };
           }
-          # No pinned apps (stock pins Settings, Dolphin, browser); shortcuts cover them.
-          { iconTasks.launchers = [ ]; }
+          # Pinned apps, replacing the stock Settings/Dolphin/browser pins.
+          {
+            iconTasks.launchers = [
+              "applications:helium.desktop"
+              "applications:discord.desktop"
+              "applications:steam.desktop"
+              "applications:com.mitchellh.ghostty.desktop"
+            ];
+          }
           "org.kde.plasma.marginsseparator"
           # Labelled CPU / RAM rows; the stock ring presets were unlabelled and
           # indistinguishable.
@@ -286,8 +298,11 @@ in
         KDE.AnimationDurationFactor = 0;
       };
 
-      # X11 apps follow the panel's 110% (see panelScale below).
-      kwinrc.Xwayland.Scale = 1.1;
+      # X11 apps at 100%, not the panel's 110%: Xwayland applies one scale to
+      # every screen, so WoW rendered 2816x1584 on the 1440p monitor and KWin
+      # downscaled each frame (stutter, no direct scanout). Only Steam's client
+      # is X11 otherwise, and it's merely a bit soft on the laptop panel.
+      kwinrc.Xwayland.Scale = 1;
 
       # Save to ~/Pictures/Screenshots and copy to the clipboard.
       spectaclerc = {

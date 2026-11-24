@@ -318,6 +318,11 @@ in
     EOF
   '';
 
+  # User avatar: the Dust NixOS logo shared with fastfetch. AccountsService
+  # falls back to ~/.face; KDE (lock screen, launcher) reads ~/.face.icon.
+  home.file.".face".source = "${configDir}/fastfetch/logo.png";
+  home.file.".face.icon".source = "${configDir}/fastfetch/logo.png";
+
   # Modern cursor (the default is the chunky X11 fallback).
   home.pointerCursor = {
     enable = true;
