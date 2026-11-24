@@ -273,6 +273,11 @@ in
         NextFocusPrefersMouse = true;
       };
 
+      # No tearing for the focused fullscreen window (on by default). WoW runs
+      # vsync off at 70-90 fps on a 144 Hz screen without VRR, so the tear line
+      # rolled through as a clockwork stutter that vanished when it lost focus.
+      kwinrc.Compositing.AllowTearing = false;
+
       # kde-gtk-config would rewrite the home-manager GTK theme and gtk.css.
       kded5rc."Module-gtkconfig".autoload = false;
 
@@ -298,11 +303,15 @@ in
         KDE.AnimationDurationFactor = 0;
       };
 
-      # X11 apps at 100%, not the panel's 110%: Xwayland applies one scale to
-      # every screen, so WoW rendered 2816x1584 on the 1440p monitor and KWin
-      # downscaled each frame (stutter, no direct scanout). Only Steam's client
-      # is X11 otherwise, and it's merely a bit soft on the laptop panel.
-      kwinrc.Xwayland.Scale = 1;
+      # X11 apps "scaled by the system": render at 1x, KWin scales per screen.
+      # The default (apply scaling themselves) makes KWin force Xwayland to the
+      # highest screen scale (the panel's 1.1), overwriting Scale, so WoW drew
+      # 2816x1584 on the 1440p monitor and KWin downscaled every frame. Only
+      # Steam's client is X11 otherwise; it's merely a bit soft on the panel.
+      kwinrc.Xwayland = {
+        XwaylandClientsScale = false;
+        Scale = 1;
+      };
 
       # Save to ~/Pictures/Screenshots and copy to the clipboard.
       spectaclerc = {
