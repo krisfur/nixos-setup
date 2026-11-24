@@ -59,9 +59,6 @@ in
     panels = [
       {
         location = "bottom";
-        # One per screen connected when this script runs (it reruns only when the
-        # panel definition changes); Plasma then keeps each per screen.
-        screen = "all";
         # Not floating: the floating margin pushed the launcher in from the edge.
         floating = false;
         height = 44;
@@ -276,10 +273,10 @@ in
         NextFocusPrefersMouse = true;
       };
 
-      # No tearing for the focused fullscreen window (on by default). WoW runs
-      # vsync off at 70-90 fps on a 144 Hz screen without VRR, so the tear line
-      # rolled through as a clockwork stutter that vanished when it lost focus.
-      kwinrc.Compositing.AllowTearing = false;
+      # Plasma's default, set explicitly because an earlier generation wrote
+      # false (tried for the dual-screen WoW stutter; didn't help, see
+      # KWIN_DRM_NO_DIRECT_SCANOUT below).
+      kwinrc.Compositing.AllowTearing = true;
 
       # kde-gtk-config would rewrite the home-manager GTK theme and gtk.css.
       kded5rc."Module-gtkconfig".autoload = false;
@@ -327,17 +324,25 @@ in
     };
   };
 
-  # Test: with both screens on, focused fullscreen WoW stalled ~40 ms once a
-  # second (one screen was fine). No direct scanout keeps KWin compositing it,
-  # avoiding per-commit plane changes across both screens. Costs one GPU copy.
+  # With both screens on, focused fullscreen WoW stalled ~40 ms once a second
+  # (fine with one screen; not tearing, refresh rate, X11 path or input).
+  # No direct scanout keeps KWin compositing it, which fixed it. Costs one GPU
+  # copy per frame for fullscreen games.
   systemd.user.sessionVariables.KWIN_DRM_NO_DIRECT_SCANOUT = "1";
 
   # Both units stop in parallel at logout. The panel's CPU/RAM widget then tries
   # to reactivate ksystemstats, is refused, and plasmashell hung 40 s until
   # SIGKILL. Ordering After= makes plasmashell stop first (stops run in reverse).
+  # It still hung once without that widget (stuck after "QObject::disconnect:
+  # Unexpected nullptr parameter"), so cap the wait at 10 s and abort rather
+  # than kill: the coredump (`coredumpctl info plasmashell`) shows where it hangs.
   xdg.configFile."systemd/user/plasma-plasmashell.service.d/stop-before-ksystemstats.conf".text = ''
     [Unit]
     After=plasma-ksystemstats.service
+
+    [Service]
+    TimeoutStopSec=10s
+    TimeoutStopFailureMode=abort
   '';
 
   # Built-in panel at 110%. KWin owns kwinoutputconfig.json (per-screen entries,
