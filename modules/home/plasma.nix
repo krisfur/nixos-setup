@@ -334,25 +334,38 @@ in
   # Plasma has no clone-panel action, and its stock template is KDE's layout.
   # Generated from plasma-manager's panel script minus its remove-all line, so
   # both stay in sync; the build fails if that line ever changes upstream.
-  xdg.dataFile."plasma/layout-templates/org.kfurman.dustPanel/metadata.json".text = builtins.toJSON {
-    KPackageStructure = "Plasma/LayoutTemplate";
-    KPlugin = {
-      Id = "org.kfurman.dustPanel";
-      Name = "Dust Panel";
-      Description = "The panel from modules/home/plasma.nix";
-      EnabledByDefault = true;
-    };
-    X-Plasma-ContainmentCategories = [ "panel" ];
-    X-Plasma-Shell = "plasmashell";
-  };
-  xdg.dataFile."plasma/layout-templates/org.kfurman.dustPanel/contents/layout.js".text =
+  # One store dir linked whole: KPackage rejects files symlinked out of the package.
+  xdg.dataFile."plasma/layout-templates/org.kfurman.dust-panel".source =
     let
       script = config.programs.plasma.startup.desktopScript.panels.text;
       removeAll = "panels().forEach((panel) => panel.remove());";
     in
     assert lib.assertMsg (lib.hasInfix removeAll script)
       "plasma-manager's panel script changed; check the Dust Panel template";
-    lib.replaceStrings [ removeAll ] [ "" ] script;
+    pkgs.runCommand "dust-panel-template"
+      {
+        metadata = builtins.toJSON {
+          KPackageStructure = "Plasma/LayoutTemplate";
+          KPlugin = {
+            Id = "org.kfurman.dust-panel";
+            Name = "Dust Panel";
+            Description = "The panel from modules/home/plasma.nix";
+            EnabledByDefault = true;
+          };
+          X-Plasma-ContainmentCategories = [ "panel" ];
+          X-Plasma-Shell = "plasmashell";
+        };
+        layout = lib.replaceStrings [ removeAll ] [ "" ] script;
+        passAsFile = [
+          "metadata"
+          "layout"
+        ];
+      }
+      ''
+        mkdir -p $out/contents
+        cp $metadataPath $out/metadata.json
+        cp $layoutPath $out/contents/layout.js
+      '';
 
   # Both units stop in parallel at logout. The panel's CPU/RAM widget then tries
   # to reactivate ksystemstats, is refused, and plasmashell hung 40 s until
