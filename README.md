@@ -155,6 +155,8 @@ KDE Plasma's settings (shortcuts, panel, input, power, lock screen, Dust look) a
 
 Monitor layout, refresh rate, primary display and adaptive sync are not declarative: KScreen stores them per screen combination, so set them in System Settings → Display on each machine.
 
+The panel appears on the primary screen only. For another screen, right-click its desktop → Add Panel → Dust Panel, a template built from the same definition. Remove the CPU/RAM widget from any panel on a screen you game on: its once-a-second redraw makes fullscreen games stutter on that screen.
+
 ## Add a package
 
 System packages live in `modules/system/packages.nix` (desktop apps) or `modules/system/dev.nix` (dev tooling). 
