@@ -25,7 +25,9 @@
   # greeter (the "double lines" artifact).
   # pcie_aspm.policy: firmware never enables L1.2 on the NVMe and wifi links.
   # If this causes NVMe stalls or wifi drops, step down to "powersave".
-  boot.kernelParams = [ "quiet" "pcie_aspm.policy=powersupersave" ];
+  # amdgpu.dcdebugmask=0x10: no eDP panel self refresh. Leaving PSR stalled the
+  # external screen ~55 ms whenever anything there redrew (1 Hz panel widgets).
+  boot.kernelParams = [ "quiet" "pcie_aspm.policy=powersupersave" "amdgpu.dcdebugmask=0x10" ];
   boot.consoleLogLevel = 0;
 
   # Networking.
