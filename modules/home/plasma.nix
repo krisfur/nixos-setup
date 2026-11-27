@@ -204,7 +204,7 @@ in
     };
 
     # The old sway bindings. Arrows focus; Shift+arrows tile (and cross screens on a
-    # repeat press); Alt+arrows resize. Desktops 1-10 replace taskbar entries.
+    # repeat press); Alt+arrows resize. Meta+N switches desktops, never taskbar entries.
     shortcuts = {
       kwin = {
         "Window Close" = [
@@ -251,10 +251,10 @@ in
             [ ];
       });
 
-      # Meta+N goes to desktops where one exists, else back to KDE's taskbar default.
+      # Meta+N never launches taskbar entries, even past the last desktop.
       plasmashell = perDesktop (n: {
         name = "activate task manager entry ${toString n}";
-        value = if used n then [ ] else "Meta+${digit n}";
+        value = [ ];
       });
 
       ksmserver."Log Out" = [
